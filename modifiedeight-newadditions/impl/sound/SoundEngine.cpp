@@ -1,0 +1,361 @@
+#include <sound/SoundEngine.hpp>
+#include <sound/MusicEngine.hpp>
+#include <sound/MusicPlayerManager.hpp>
+#include <Options.hpp>
+#include <entity/Mob.hpp>
+#include <math.h>
+#include <sounddata.hpp>
+#include <sound/NewSoundData.hpp>
+#include <AppPlatform.hpp>
+#include <_AssetFile.hpp>
+#include <cstring>
+#include <cstdlib>
+
+extern "C" int stb_vorbis_decode_memory(const unsigned char *mem, int len, int *channels, int *sample_rate, short **output);
+
+SoundEngine::SoundEngine(float a2)
+	: SS_SUPER_CLASS() {
+	this->field_40 = 0;
+	this->field_A14 = 0.0;
+	this->field_A18 = 0.0;
+	this->field_A1C = 0.0;
+	this->field_A20 = 0.0;
+	this->field_A24 = 1.0 / a2;
+	this->minecraft = 0;
+}
+float SoundEngine::_getVolumeMult(float a2, float a3, float a4) {
+	float v5; // s13
+	float v6; // s15
+
+	v5 = sqrt((float)((float)((float)((float)(a3 - this->field_A18) * (float)(a3 - this->field_A18)) + (float)((float)(a2 - this->field_A14) * (float)(a2 - this->field_A14))) + (float)((float)(a4 - this->field_A1C) * (float)(a4 - this->field_A1C))));
+	v6 = 1.1 - (float)(v5 * this->field_A24);
+	if(v6 > 1.0) {
+		return 1.0;
+	}
+	if(v6 <= -1.0) {
+		return -1.0;
+	}
+	return v6;
+}
+void SoundEngine::destroy(void) {
+}
+void SoundEngine::enable(bool_t) {
+}
+
+void SoundEngine::init(struct Minecraft* a2, struct Options* a3) {
+	this->minecraft = a2;
+	this->options = a3;
+	this->sounds.add("step.cloth", SA_cloth1);
+	this->sounds.add("step.cloth", SA_cloth2);
+	this->sounds.add("step.cloth", SA_cloth3);
+	this->sounds.add("step.cloth", SA_cloth4);
+	this->sounds.add("step.grass", SA_grass1);
+	this->sounds.add("step.grass", SA_grass2);
+	this->sounds.add("step.grass", SA_grass3);
+	this->sounds.add("step.grass", SA_grass4);
+	this->sounds.add("step.gravel", SA_gravel1);
+	this->sounds.add("step.gravel", SA_gravel2);
+	this->sounds.add("step.gravel", SA_gravel3);
+	this->sounds.add("step.gravel", SA_gravel4);
+	this->sounds.add("step.sand", SA_sand1);
+	this->sounds.add("step.sand", SA_sand2);
+	this->sounds.add("step.sand", SA_sand3);
+	this->sounds.add("step.sand", SA_sand4);
+	this->sounds.add("step.stone", SA_stone1);
+	this->sounds.add("step.stone", SA_stone2);
+	this->sounds.add("step.stone", SA_stone3);
+	this->sounds.add("step.stone", SA_stone4);
+	this->sounds.add("step.wood", SA_wood1);
+	this->sounds.add("step.wood", SA_wood2);
+	this->sounds.add("step.wood", SA_wood3);
+	this->sounds.add("step.wood", SA_wood4);
+	this->sounds.add("random.splash", SA_splash);
+	this->sounds.add("random.explode", SA_explode);
+	this->sounds.add("random.click", SA_click);
+	this->sounds.add("random.break", SA_break);
+	this->sounds.add("random.burp", SA_burp);
+	this->sounds.add("fire.fire", SA_fire);
+	this->sounds.add("fire.ignite", SA_ignite);
+	this->sounds.add("random.door_open", SA_door_open);
+	this->sounds.add("random.door_close", SA_door_close);
+	this->sounds.add("random.chestclosed", SA_chestclosed);
+	this->sounds.add("random.chestopen", SA_chestopen);
+	this->sounds.add("random.pop", SA_pop);
+	this->sounds.add("random.pop2", SA_pop2);
+	this->sounds.add("random.hurt", SA_hurt);
+	this->sounds.add("random.glass", SA_glass1);
+	this->sounds.add("random.glass", SA_glass2);
+	this->sounds.add("random.glass", SA_glass3);
+	this->sounds.add("mob.sheep", SA_sheep1);
+	this->sounds.add("mob.sheep", SA_sheep2);
+	this->sounds.add("mob.sheep", SA_sheep3);
+	this->sounds.add("mob.pig", SA_pig1);
+	this->sounds.add("mob.pig", SA_pig2);
+	this->sounds.add("mob.pig", SA_pig3);
+	this->sounds.add("mob.pigdeath", SA_pigdeath);
+	this->sounds.add("mob.cow", SA_cow1);
+	this->sounds.add("mob.cow", SA_cow2);
+	this->sounds.add("mob.cow", SA_cow3);
+	this->sounds.add("mob.cow", SA_cow4);
+	this->sounds.add("mob.cowhurt", SA_cowhurt1);
+	this->sounds.add("mob.cowhurt", SA_cowhurt2);
+	this->sounds.add("mob.cowhurt", SA_cowhurt3);
+	this->sounds.add("mob.chicken", SA_chicken2);
+	this->sounds.add("mob.chicken", SA_chicken3);
+	this->sounds.add("mob.chickenhurt", SA_chickenhurt1);
+	this->sounds.add("mob.chickenhurt", SA_chickenhurt2);
+	this->sounds.add("mob.zombie", SA_zombie1);
+	this->sounds.add("mob.zombie", SA_zombie2);
+	this->sounds.add("mob.zombie", SA_zombie3);
+	this->sounds.add("mob.zombiedeath", SA_zombiedeath);
+	this->sounds.add("mob.zombiehurt", SA_zombiehurt1);
+	this->sounds.add("mob.zombiehurt", SA_zombiehurt2);
+	this->sounds.add("mob.skeleton", SA_skeleton1);
+	this->sounds.add("mob.skeleton", SA_skeleton2);
+	this->sounds.add("mob.skeleton", SA_skeleton3);
+	this->sounds.add("mob.skeletonhurt", SA_skeletonhurt1);
+	this->sounds.add("mob.skeletonhurt", SA_skeletonhurt2);
+	this->sounds.add("mob.skeletonhurt", SA_skeletonhurt3);
+	this->sounds.add("mob.skeletonhurt", SA_skeletonhurt4);
+	this->sounds.add("mob.spider", SA_spider1);
+	this->sounds.add("mob.spider", SA_spider2);
+	this->sounds.add("mob.spider", SA_spider3);
+	this->sounds.add("mob.spider", SA_spider4);
+	this->sounds.add("mob.spiderdeath", SA_spiderdeath);
+	this->sounds.add("mob.zombiepig.zpig", SA_zpig1);
+	this->sounds.add("mob.zombiepig.zpig", SA_zpig2);
+	this->sounds.add("mob.zombiepig.zpig", SA_zpig3);
+	this->sounds.add("mob.zombiepig.zpig", SA_zpig4);
+	this->sounds.add("mob.zombiepig.zpigangry", SA_zpigangry1);
+	this->sounds.add("mob.zombiepig.zpigangry", SA_zpigangry2);
+	this->sounds.add("mob.zombiepig.zpigangry", SA_zpigangry3);
+	this->sounds.add("mob.zombiepig.zpigangry", SA_zpigangry4);
+	this->sounds.add("mob.zombiepig.zpigdeath", SA_zpigdeath);
+	this->sounds.add("mob.zombiepig.zpighurt", SA_zpighurt1);
+	this->sounds.add("mob.zombiepig.zpighurt", SA_zpighurt2);
+	this->sounds.add("damage.fallbig", SA_fallbig1);
+	this->sounds.add("damage.fallbig", SA_fallbig2);
+	this->sounds.add("damage.fallsmall", SA_fallsmall);
+	this->sounds.add("random.bow", SA_bow);
+	this->sounds.add("random.bowhit", SA_bowhit1);
+	this->sounds.add("random.bowhit", SA_bowhit2);
+	this->sounds.add("random.bowhit", SA_bowhit3);
+	this->sounds.add("random.bowhit", SA_bowhit4);
+	this->sounds.add("mob.creeper", SA_creeper1);
+	this->sounds.add("mob.creeper", SA_creeper2);
+	this->sounds.add("mob.creeper", SA_creeper3);
+	this->sounds.add("mob.creeper", SA_creeper4);
+	this->sounds.add("mob.creeperdeath", SA_creeperdeath);
+	this->sounds.add("random.eat", SA_eat1);
+	this->sounds.add("random.eat", SA_eat2);
+	this->sounds.add("random.eat", SA_eat3);
+	this->sounds.add("random.fuse", SA_fuse);
+	registerNewSounds(this->sounds);
+
+	auto loadOggSound = [](SoundRepository& repo, const std::string& name, const std::string& relPath) {
+		AssetFile af = AppPlatform::_singleton ? AppPlatform::_singleton->readAssetFile(relPath) : AssetFile(0, -1);
+		if (af.bytes && af.length > 0) {
+			int channels = 0, sampleRate = 0;
+			short* pcm = nullptr;
+			int samples = stb_vorbis_decode_memory((const unsigned char*)af.bytes, af.length, &channels, &sampleRate, &pcm);
+			delete[] af.bytes;
+			if (samples > 0 && pcm) {
+				int32_t bytesPerSample = 2;
+				int32_t dataLen = samples * channels * bytesPerSample;
+				char_t* buf = new char_t[16 + dataLen];
+				((int32_t*)buf)[0] = channels;
+				((int32_t*)buf)[1] = bytesPerSample;
+				((int32_t*)buf)[2] = sampleRate;
+				((int32_t*)buf)[3] = samples;
+				memcpy(buf + 16, pcm, dataLen);
+				free(pcm);
+				SoundDesc desc(buf);
+				repo.add(name, desc);
+			}
+		}
+	};
+
+	for (int i = 1; i <= 8; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/frog/idle%d.ogg", i);
+		loadOggSound(this->sounds, "mob.frog.ambient", b);
+	}
+	for (int i = 1; i <= 5; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/frog/hurt%d.ogg", i);
+		loadOggSound(this->sounds, "mob.frog.hurt", b);
+	}
+	for (int i = 1; i <= 3; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/frog/death%d.ogg", i);
+		loadOggSound(this->sounds, "mob.frog.death", b);
+	}
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/frog/step%d.ogg", i);
+		loadOggSound(this->sounds, "mob.frog.step", b);
+	}
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/frog/long_jump%d.ogg", i);
+		loadOggSound(this->sounds, "mob.frog.jump", b);
+	}
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/frog/eat%d.ogg", i);
+		loadOggSound(this->sounds, "mob.frog.eat", b);
+	}
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/frog/tongue%d.ogg", i);
+		loadOggSound(this->sounds, "mob.frog.tongue", b);
+	}
+
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/armor_stand/break%d.ogg", i);
+		loadOggSound(this->sounds, "mob.armor_stand.break", b);
+	}
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/armor_stand/hit%d.ogg", i);
+		loadOggSound(this->sounds, "mob.armor_stand.hit", b);
+	}
+
+	for (int i = 1; i <= 3; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/ocelot/hiss%d.ogg", i);
+		loadOggSound(this->sounds, "mob.cat.hiss", b);
+		loadOggSound(this->sounds, "mob.ocelot.hiss", b);
+	}
+	for (int i = 1; i <= 3; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/ocelot/hitt%d.ogg", i);
+		loadOggSound(this->sounds, "mob.cat.hitt", b);
+		loadOggSound(this->sounds, "mob.cat.hurt", b);
+		loadOggSound(this->sounds, "mob.cat.death", b);
+		loadOggSound(this->sounds, "mob.ocelot.hit", b);
+		loadOggSound(this->sounds, "mob.ocelot.hurt", b);
+		loadOggSound(this->sounds, "mob.ocelot.death", b);
+	}
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/ocelot/meow%d.ogg", i);
+		loadOggSound(this->sounds, "mob.cat.meow", b);
+		loadOggSound(this->sounds, "mob.cat.idle", b);
+		loadOggSound(this->sounds, "mob.ocelot.meow", b);
+		loadOggSound(this->sounds, "mob.ocelot.idle", b);
+	}
+	for (int i = 1; i <= 3; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/ocelot/purr%d.ogg", i);
+		loadOggSound(this->sounds, "mob.cat.purr", b);
+		loadOggSound(this->sounds, "mob.ocelot.purr", b);
+	}
+	for (int i = 1; i <= 2; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/mob/ocelot/purreow%d.ogg", i);
+		loadOggSound(this->sounds, "mob.cat.purreow", b);
+		loadOggSound(this->sounds, "mob.ocelot.purreow", b);
+	}
+
+	loadOggSound(this->sounds, "random.enderchestopen", "sounds/random/enderchest/open.ogg");
+	loadOggSound(this->sounds, "random.enderchestclosed", "sounds/random/enderchest/close.ogg");
+
+	for (int i = 1; i <= 3; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper_door/toggle%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper_door.toggle", b);
+		loadOggSound(this->sounds, "block.copper_door.break", b);
+		loadOggSound(this->sounds, "block.copper_door.place", b);
+	}
+
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper_trapdoor/toggle%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper_trapdoor.toggle", b);
+		loadOggSound(this->sounds, "block.copper_trapdoor.break", b);
+		loadOggSound(this->sounds, "block.copper_trapdoor.place", b);
+	}
+
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper_bulb/break%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper_bulb.break", b);
+	}
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper_bulb/place%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper_bulb.place", b);
+	}
+	for (int i = 1; i <= 6; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper_bulb/step%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper_bulb.step", b);
+	}
+	loadOggSound(this->sounds, "block.copper_bulb.toggle", "sounds/block/copper_bulb/toggle.ogg");
+	loadOggSound(this->sounds, "block.copper_bulb.turn_on", "sounds/block/copper_bulb/toggle.ogg");
+	loadOggSound(this->sounds, "block.copper_bulb.turn_off", "sounds/block/copper_bulb/toggle.ogg");
+
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper_grate/break%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper_grate.break", b);
+	}
+	for (int i = 1; i <= 6; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper_grate/step%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper_grate.step", b);
+	}
+
+	for (int i = 1; i <= 4; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper/break%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper.break", b);
+	}
+	for (int i = 1; i <= 6; ++i) {
+		char b[64]; snprintf(b, sizeof(b), "sounds/block/copper/step%d.ogg", i);
+		loadOggSound(this->sounds, "block.copper.step", b);
+		loadOggSound(this->sounds, "step.copper", b);
+	}
+}
+void SoundEngine::play(const std::string& a2, float a3, float a4, float a5, float a6, float a7) {
+	float v8;  // s16
+	float v12; // s16
+
+	v8 = a6 * this->options->soundVolume;
+	if(v8 > 0.0) {
+		v12 = v8 * this->_getVolumeMult(a3, a4, a5);
+		if(v12 > 1.0) {
+			v12 = 1.0;
+		} else if(v12 <= 0.0) {
+			v12 = 0.0;
+		}
+		if(this->options->soundVolume != 0.0 && v12 > 0.0) {
+			SoundDesc v13;
+			if(this->sounds.get(a2, v13)) {
+				SS_SUPER_CLASS::playAt(v13, a3, a4, a5, v12, a7);
+			}
+		}
+	}
+}
+void SoundEngine::playUI(const std::string& a2, float a3, float a4) {
+	float soundVolume; // s15
+	float v6;		   // s16
+
+	soundVolume = this->options->soundVolume;
+	v6 = a3 * soundVolume;
+	if((float)(a3 * soundVolume) > 0.0) {
+		if(v6 > 1.0) {
+			if(soundVolume == 0.0) {
+				return;
+			}
+			v6 = 1.0;
+			goto LABEL_6;
+		}
+		if(v6 > 0.0 && soundVolume != 0.0 && v6 > 0.0) {
+LABEL_6:
+			SoundDesc v8; // [sp+10h] [bp-38h] BYREF
+			if(this->sounds.get(a2, v8)) {
+				SS_SUPER_CLASS::playAt(v8, 0.0, 0.0, 0.0, v6, a4);
+			}
+		}
+	}
+}
+void SoundEngine::update(struct Mob* a2, float a3) {
+	if (MusicEngine::instance && this->minecraft) {
+		MusicEngine::instance->update(this->minecraft);
+	}
+	if(this->options->soundVolume != 0.0) {
+		if(a2) {
+			this->field_A14 = a2->prevX + (float)((float)(a2->posX - a2->prevX) * a3);
+			this->field_A18 = a2->prevY + (float)((float)(a2->posY - a2->prevY) * a3);
+			this->field_A1C = a2->prevZ + (float)((float)(a2->posZ - a2->prevZ) * a3);
+			float v3 = a2->prevYaw + (float)((float)(a2->yaw - a2->prevYaw) * a3);
+			this->field_A20 = v3;
+			this->setListenerAngle(v3);
+		}
+	}
+}
+void SoundEngine::updateOptions(void) {
+}
+SoundEngine::~SoundEngine() {
+}

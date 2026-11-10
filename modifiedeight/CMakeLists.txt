@@ -1,0 +1,209 @@
+cmake_minimum_required(VERSION 3.16)
+project(modifiedeight LANGUAGES CXX)
+
+enable_language(ASM)
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -I${CMAKE_CURRENT_SOURCE_DIR}")
+if(MCPE_IOS)
+    enable_language(OBJCXX)
+endif()
+
+if(ANDROID)
+    set(ZLIB_LIBRARIES z)
+elseif(MCPE_IOS)
+    find_package(ZLIB REQUIRED)
+else()
+    find_package(ZLIB REQUIRED)
+    find_package(OpenGL REQUIRED)
+    if(NOT WIN32)
+        find_package(OpenAL REQUIRED)
+    endif()
+    find_package(SDL REQUIRED)
+    if(NOT WIN32)
+        find_package(CURL REQUIRED)
+    endif()
+endif()
+
+add_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wno-out-of-line-declaration>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wno-write-strings>
+    -Werror=infinite-recursion
+    -Werror=return-type
+    -DDIFFERENTTWEAKS
+)
+
+if(ANDROID)
+    add_compile_options(-DUSEGLES -DIMTOOLAZYTOFIX16ERRS -DEVILOREOBROKEPTHREADS)
+elseif(MCPE_IOS)
+    add_compile_options(-DUSEGLES -DIMTOOLAZYTOFIX16ERRS -DMCPE_IOS -DSTBI_NO_THREAD_LOCALS)
+else()
+    add_compile_options(-DIMTOOLAZYTOFIX16ERRS -DPCTWEAKS)
+endif()
+
+if(DEBUG)
+    add_compile_options(-DAUTH_SERVER="127.0.0.1:8000" -DPEOAPI_SERVER="127.0.0.1:8001")
+    add_compile_options(-g -DDEBUG)
+else()
+    add_compile_options(-g0)
+endif()
+
+file(GLOB_RECURSE IMPLCPP "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB_RECURSE IMPLC   "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
+file(GLOB_RECURSE IMPLASM "${CMAKE_CURRENT_SOURCE_DIR}/*.S")
+file(GLOB_RECURSE HEADC   "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+file(GLOB_RECURSE HEADCPP "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
+
+if(MCPE_IOS)
+    list(FILTER IMPLCPP EXCLUDE REGEX ".*/impl/main\\.cpp$")
+    list(FILTER IMPLCPP EXCLUDE REGEX ".*/impl/AppPlatform_sdl\\.cpp$")
+endif()
+
+if(ANDROID)
+    if(NOT TARGET native_app_glue)
+        add_library(native_app_glue STATIC ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
+    endif()
+    add_library(minecraftpe SHARED ${IMPLCPP} ${IMPLC} ${IMPLASM} ${HEADC} ${HEADCPP})
+    target_include_directories(minecraftpe PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/headers"
+        "${ANDROID_NDK}/sources/android/native_app_glue"
+    )
+    target_link_libraries(minecraftpe PRIVATE z EGL GLESv1_CM OpenSLES oaes_lib RakNetStatic native_app_glue jsoncpp_lib utf8proc log android)
+    set_target_properties(minecraftpe PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build"
+    )
+elseif(MCPE_IOS)
+    set(IOS_PLATFORM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../platforms/ios")
+    file(GLOB IOS_PLATFORM_SRC
+        "${IOS_PLATFORM_DIR}/*.mm"
+        "${IOS_PLATFORM_DIR}/*.m"
+    )
+    set(EMBEDDED_ASSETS_C "${CMAKE_CURRENT_BINARY_DIR}/embedded_assets.c")
+    set(EMBED_ASSET_DIR "" CACHE PATH "Directory of game assets to embed into iOS executable")
+    if(NOT EMBED_ASSET_DIR)
+        if(EXISTS "${CMAKE_SOURCE_DIR}/platforms/android/app/src/classic/assets")
+            set(EMBED_ASSET_DIR "${CMAKE_SOURCE_DIR}/platforms/android/app/src/classic/assets")
+        elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+            set(EMBED_ASSET_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+        endif()
+    endif()
+    if(EMBED_ASSET_DIR)
+        add_custom_command(
+            OUTPUT "${EMBEDDED_ASSETS_C}"
+            COMMAND python3 "${CMAKE_SOURCE_DIR}/tools/embed_assets.py"
+                "${EMBED_ASSET_DIR}" "${EMBEDDED_ASSETS_C}" "assets"
+            DEPENDS "${CMAKE_SOURCE_DIR}/tools/embed_assets.py"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            COMMENT "Embedding iOS assets into executable"
+            VERBATIM
+        )
+        list(APPEND IOS_PLATFORM_SRC "${EMBEDDED_ASSETS_C}")
+        set_source_files_properties("${EMBEDDED_ASSETS_C}" PROPERTIES GENERATED TRUE)
+    endif()
+    add_executable(modifiedeight ${IMPLCPP} ${IMPLC} ${IMPLASM} ${HEADC} ${HEADCPP} ${IOS_PLATFORM_SRC})
+    target_include_directories(modifiedeight PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/headers"
+        "${IOS_PLATFORM_DIR}"
+    )
+    if(ZLIB_LIBRARY)
+        set(ZLIB_LINK_TARGET ${ZLIB_LIBRARY})
+    else()
+        set(ZLIB_LINK_TARGET ZLIB::ZLIB)
+    endif()
+    target_link_libraries(modifiedeight
+        oaes_lib RakNetStatic jsoncpp_lib utf8proc
+        ${ZLIB_LINK_TARGET}
+        objc
+        "-framework Foundation"
+        "-framework CoreGraphics"
+        "-framework QuartzCore"
+        "-framework UIKit"
+        "-framework OpenGLES"
+        "-framework OpenAL"
+        "-framework AVFoundation"
+        "-framework GameController"
+    )
+    set_target_properties(modifiedeight PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build"
+    )
+else()
+    add_executable(modifiedeight ${IMPLCPP} ${IMPLC} ${IMPLASM} ${HEADC} ${HEADCPP})
+    target_include_directories(modifiedeight PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/headers"
+        ${SDL_INCLUDE_DIR}
+        ${SDL_INCLUDE_DIR}/SDL
+    )
+
+    if(WIN32)
+        target_link_options(modifiedeight PRIVATE -static -static-libgcc -static-libstdc++)
+        target_link_libraries(modifiedeight pthread dsound dxguid opengl32 winmm ws2_32 gdi32 psapi)
+    else()
+        target_link_libraries(modifiedeight ${OPENAL_LIBRARY})
+    endif()
+
+    if(WIN32)
+        set(CURL_LINK_TARGET "")
+    elseif(CURL_LIBRARY)
+        set(CURL_LINK_TARGET ${CURL_LIBRARY})
+    else()
+        set(CURL_LINK_TARGET CURL::libcurl)
+    endif()
+
+    if(ZLIB_LIBRARY)
+        set(ZLIB_LINK_TARGET ${ZLIB_LIBRARY})
+    else()
+        set(ZLIB_LINK_TARGET ZLIB::ZLIB)
+    endif()
+
+    if(WIN32)
+        if(SDL_LIBRARY)
+            set(SDL_LINK_TARGET ${SDL_LIBRARY})
+        else()
+            set(SDL_LINK_TARGET ${SDL_LIBRARIES})
+        endif()
+        set(OPENGL_LINK_TARGET "")
+    else()
+        if(EXISTS "/run/host/usr/lib64/libSDL.so")
+            set(SDL_LINK_TARGET "/run/host/usr/lib64/libSDL.so")
+        elseif(SDL_LIBRARIES)
+            set(SDL_LINK_TARGET ${SDL_LIBRARIES})
+        else()
+            set(SDL_LINK_TARGET SDL)
+        endif()
+        set(OPENGL_LINK_TARGET ${OPENGL_LIBRARIES})
+    endif()
+
+    target_link_libraries(modifiedeight
+        ${CURL_LINK_TARGET}
+        ${ZLIB_LINK_TARGET}
+        ${OPENGL_LINK_TARGET}
+        ${SDL_LINK_TARGET}
+        oaes_lib
+        RakNetStatic
+        jsoncpp_lib
+        utf8proc
+    )
+    if(NOT WIN32 AND NOT APPLE)
+        target_link_libraries(modifiedeight dl)
+    endif()
+
+    set_target_properties(modifiedeight PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build"
+    )
+
+    if(EXISTS "${CMAKE_SOURCE_DIR}/platforms/android/app/src/classic/assets")
+        add_custom_command(TARGET modifiedeight POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_SOURCE_DIR}/platforms/android/app/src/classic/assets"
+                "${CMAKE_CURRENT_BINARY_DIR}/build/assets"
+        )
+    endif()
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+        add_custom_command(TARGET modifiedeight POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+                "${CMAKE_CURRENT_BINARY_DIR}/build/assets"
+        )
+    endif()
+endif()

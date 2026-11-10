@@ -1,0 +1,164 @@
+variables:
+  BUILD_TYPE: Release
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^no-build-/
+      when: never
+    - when: always
+
+stages:
+  - build
+  - package
+
+cache:
+  key: "$CI_JOB_NAME-v1"
+  paths:
+    - ~/.cache/ccache
+
+.build_template: &build_template
+  before_script:
+    - git submodule update --init --recursive
+    - sudo apt update -qq
+    - sudo apt install -y --no-install-recommends ccache libsdl1.2-dev libopenal-dev libgl1-mesa-dev zlib1g-dev libcurl4-openssl-dev cmake make git
+  script:
+    - mkdir -p build
+    - cd build
+    - ccache -z || true
+    - cmake .. -DDYNAMICSOUNDS=ON
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache
+      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+    - make -j8
+    - ccache -s || true
+    - mkdir -p modifiedeight/build/assets modifiedeight-newadditions/build/assets
+    - cp -r ../platforms/android/app/src/classic/assets/* modifiedeight/build/assets/ 2>/dev/null || true
+    - cp -r ../modifiedeight/assets/* modifiedeight/build/assets/ 2>/dev/null || true
+    - cp -r ../platforms/android/app/src/newadditions/assets/* modifiedeight-newadditions/build/assets/ 2>/dev/null || true
+    - cp -r ../modifiedeight-newadditions/assets/* modifiedeight-newadditions/build/assets/ 2>/dev/null || true
+
+build-linux:
+  stage: build
+  image: ubuntu:latest
+  tags:
+    - linux
+  <<: *build_template
+  artifacts:
+    paths:
+      - build/modifiedeight/build/modifiedeight
+      - build/modifiedeight/build/assets
+      - build/modifiedeight-newadditions/build/modifiedeight-newadditions
+      - build/modifiedeight-newadditions/build/assets
+    expire_in: 1 week
+
+build-windows:
+  stage: build
+  image: ubuntu:latest
+  tags:
+    - linux
+  <<: *build_template
+  before_script:
+    - git submodule update --init --recursive
+    - sudo apt update -qq
+    - sudo apt install -y --no-install-recommends g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64 libz-mingw-w64-dev cmake make ccache git
+  script:
+    - mkdir -p build
+    - cd build
+    - ccache -z || true
+    - cmake .. -DDYNAMICSOUNDS=ON
+      -DCMAKE_SYSTEM_NAME=Windows
+      -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc
+      -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache
+      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++"
+      -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
+      -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+      -DSDL_LIBRARY="$PWD/../prebuilt/win64/lib/SDL.dll"
+      -DSDL_INCLUDE_DIR="$PWD/../prebuilt/win64/include/"
+      -DCMAKE_FIND_ROOT_PATH=/usr/x86_64-w64-mingw32/
+      -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+    - make -j8
+    - ccache -s || true
+    - cp modifiedeight/build/modifiedeight.exe . 2>/dev/null || true
+    - cp modifiedeight-newadditions/build/modifiedeight-newadditions.exe . 2>/dev/null || true
+    - cp ../prebuilt/win64/lib/SDL.dll .
+    - cp /usr/x86_64-w64-mingw32/bin/zlib1.dll . 2>/dev/null || true
+    - cp /usr/x86_64-w64-mingw32/lib/zlib1.dll . 2>/dev/null || true
+    - cp /usr/lib/gcc/x86_64-w64-mingw32/*-win32/libstdc++-6.dll . 2>/dev/null || true
+    - cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll . 2>/dev/null || true
+    - cp /usr/lib/gcc/x86_64-w64-mingw32/*-win32/libgcc_s_seh-1.dll . 2>/dev/null || true
+    - cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll . 2>/dev/null || true
+    - cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll . 2>/dev/null || true
+    - mkdir -p assets
+    - cp -r ../platforms/android/app/src/newadditions/assets/* assets/ 2>/dev/null || true
+    - cp -r ../modifiedeight-newadditions/assets/* assets/ 2>/dev/null || true
+  artifacts:
+    paths:
+      - build/modifiedeight.exe
+      - build/modifiedeight-newadditions.exe
+      - build/SDL.dll
+      - build/zlib1.dll
+      - build/*.dll
+      - build/assets
+    expire_in: 1 week
+
+build-android:
+  stage: build
+  image: ubuntu:latest
+  tags:
+    - linux
+  before_script:
+    - git submodule update --init --recursive
+    - sudo apt update -qq
+    - sudo apt install -y --no-install-recommends openjdk-17-jdk wget unzip curl git python3 libncurses5 libtinfo5 lib32z1 libc6-i386 lib32stdc++6
+    - if [ ! -f /usr/lib/x86_64-linux-gnu/libncurses.so.5 ]; then sudo ln -s /usr/lib/x86_64-linux-gnu/libncurses.so.6 /usr/lib/x86_64-linux-gnu/libncurses.so.5 || true; fi
+    - if [ ! -f /usr/lib/x86_64-linux-gnu/libtinfo.so.5 ]; then sudo ln -s /usr/lib/x86_64-linux-gnu/libtinfo.so.6 /usr/lib/x86_64-linux-gnu/libtinfo.so.5 || true; fi
+  script:
+    - chmod +x platforms/android/gradlew
+    - ./platforms/android/gradlew assembleRelease
+  artifacts:
+    paths:
+      - platforms/android/app/build/outputs/apk/**/*.apk
+    expire_in: 1 week
+
+build-ios:
+  stage: build
+  tags:
+    - macos
+  allow_failure: true
+  script:
+    - cd platforms/ios
+    - chmod +x build.sh build-ipa.sh
+    - NBC_CLIENT=classic ./build.sh classic
+    - NBC_CLIENT=newadditions ./build.sh newadditions
+  artifacts:
+    paths:
+      - platforms/ios/build/ModifiedEight.ipa
+      - platforms/ios/build/ModifiedEight-NewAdditions.ipa
+    expire_in: 1 week
+
+package:
+  stage: package
+  image: ubuntu:latest
+  tags:
+    - linux
+  needs:
+    - job: build-linux
+      artifacts: true
+    - job: build-windows
+      artifacts: true
+    - job: build-android
+      artifacts: true
+  script:
+    - HASH=$(git rev-parse --short "$CI_COMMIT_SHA")
+    - mkdir -p dist
+    - cmake -E tar cfv dist/minecraftpe-${HASH}-windows.zip --format=zip -- build/modifiedeight.exe build/modifiedeight-newadditions.exe build/SDL.dll build/zlib1.dll build/*.dll build/assets
+    - cmake -E tar cfv dist/minecraftpe-${HASH}-linux.zip --format=zip -- build/modifiedeight/build/modifiedeight build/modifiedeight/build/assets build/modifiedeight-newadditions/build/modifiedeight-newadditions build/modifiedeight-newadditions/build/assets
+    - cmake -E tar cfv dist/minecraftpe-server-${HASH}-linux.zip --format=zip -- build/modifiedeight/build/modifiedeight
+    - ls dist/
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 month

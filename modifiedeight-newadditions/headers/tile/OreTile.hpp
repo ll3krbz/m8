@@ -1,0 +1,15 @@
+#pragma once
+#include <tile/Tile.hpp>
+
+struct OreTile : Tile{
+	OreTile(int32_t, const std::string&);
+
+	virtual ~OreTile();
+	virtual int32_t getResource(int32_t, Random*);
+	virtual int32_t getResourceCount(Random*);
+	virtual int32_t getSpawnResourcesAuxValue(int32_t);
+	virtual void animateTick(Level*, int32_t, int32_t, int32_t, Random*);
+	virtual bool_t use(Level*, int32_t, int32_t, int32_t, Player*);
+	virtual void stepOn(Level*, int32_t, int32_t, int32_t, Entity*);
+	virtual void attack(Level*, int32_t, int32_t, int32_t, Player*);
+};

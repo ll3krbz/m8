@@ -1,0 +1,129 @@
+#include <entity/particles/TerrainParticle.hpp>
+#include <level/Level.hpp>
+#include <rendering/Tesselator.hpp>
+#include <tile/Tile.hpp>
+#include <tile/MixedSlabTile.hpp>
+#include <tile/entity/MixedSlabTileEntity.hpp>
+#include <tile/MobHeadTile.hpp>
+TerrainParticle::TerrainParticle(Level* level, ParticleType pt, const std::string& a2)
+	: Particle(level, pt, a2) {
+	this->rColMul = this->gColMul = this->bColMul = 0.5f;
+}
+TerrainParticle::~TerrainParticle() {
+}
+void TerrainParticle::init(float a2, float a3, float a4, float a5, float a6, float a7, int32_t a8) {
+	Tile* v13;
+	float v19;
+	Tile* tile;
+	int v21;
+	float gColMul;
+
+	v13 = Tile::tiles[a8 & 0xffff];
+	if(v13 && v13->blockID == Tile::mixedSlab->blockID && this->level) {
+		MixedSlabTileEntity* te = (MixedSlabTileEntity*)this->level->getTileEntity((int32_t)a2, (int32_t)a3, (int32_t)a4);
+		if(te) {
+			bool hitTop = false;
+			if (te->mode == 1) hitTop = (a4 - (float)(int32_t)a4) >= 0.5f;
+			else if (te->mode == 2) hitTop = (a2 - (float)(int32_t)a2) >= 0.5f;
+			else hitTop = (a3 - (float)(int32_t)a3) >= 0.5f;
+			if (te->bottomTileId > 0 && te->topTileId == 0) hitTop = false;
+			if (te->topTileId > 0 && te->bottomTileId == 0) hitTop = true;
+			int32_t slabId = (hitTop && te->topTileId > 0) ? te->topTileId : te->bottomTileId;
+			int32_t slabAux = (hitTop && te->topTileId > 0) ? te->topAux : te->bottomAux;
+			if (slabId <= 0 || slabId >= 256) {
+				slabId = te->bottomTileId > 0 ? te->bottomTileId : te->topTileId;
+				slabAux = te->bottomTileId > 0 ? te->bottomAux : te->topAux;
+			}
+			if(slabId > 0 && slabId < 256 && Tile::tiles[slabId]) {
+				v13 = Tile::tiles[slabId];
+				a8 = (a8 & 0xffff) | (slabAux << 16);
+			}
+		}
+	}
+	this->tile = v13;
+	if(v13 && MobHeadTile::isHeadBlock(v13->blockID)) {
+		this->field_168 = *Tile::rock->getTexture(2, 0);
+	} else {
+		this->field_168 = *v13->getTexture(2, (a8 >> 16));
+	}
+	v19 = this->_scale * 0.3f;
+	tile = this->tile;
+	this->gravity = tile->field_3C;
+	this->_scale = v19;
+	if(tile && MobHeadTile::isHeadBlock(tile->blockID)) {
+		int ht = MobHeadTile::getHeadType(tile->blockID);
+		static const int32_t headCols[18] = {
+			0x9B6950, 0x47B035, 0x587E3A, 0xC4C4C4, 0x332824, 0xEA9494,
+			0x76B662, 0x4B3B2E, 0xF0A5A2, 0xE8E8E8, 0xEBEBEB, 0xBD8B72,
+			0xF0B849, 0xF5F5F5, 0x388235, 0x587E3A, 0xD7D7D7, 0xD86B27
+		};
+		int32_t c = (ht >= 0 && ht < 18) ? headCols[ht] : 0xAAAAAA;
+		this->rColMul = (float)((c >> 16) & 0xFF) / 255.0f * 0.9f;
+		this->gColMul = (float)((c >> 8) & 0xFF) / 255.0f * 0.9f;
+		this->bColMul = (float)(c & 0xFF) / 255.0f * 0.9f;
+	} else if(tile != Tile::grass) {
+		v21 = tile->getColor(this->level, (int32_t)a2, (int32_t)a3, (int32_t)a4);
+		gColMul = this->gColMul;
+		this->rColMul = this->rColMul * (float)((float)((v21 >> 16) & 0xff) / 255.0) * 0.8f;
+		this->gColMul = gColMul * (float)((float)((v21 >> 8) & 0xff) / 255.0) * 0.8f;
+		this->bColMul = this->bColMul * (float)((float)(v21 & 0xff) / 255.0) * 0.8f;
+	}
+}
+void TerrainParticle::render(Tesselator& a2, float a3, float a4, float a5, float a6, float a7, float a8) {
+	float minX; // s21
+	float minY; // s20
+	float v13;	// s14
+	float v14;	// s19
+	float v15;	// s21
+	float v16;	// s14
+	float v17;	// s18
+	float v18;	// s20
+	float v19;	// s16
+	float v20;	// s26
+	float v21;	// s30
+	float v22;	// s24
+	float v23;	// r0
+	float v24;	// s25
+	float v25;	// s17
+	float v26;	// s23
+	float v27;	// s29
+	float v28;	// s16
+	float v29;	// s22
+	float v30;	// s29
+	float v31;	// s25
+	float v32;	// s23
+
+	minX = this->field_168.minX;
+	minY = this->field_168.minY;
+	v13 = this->field_168.maxX - minX;
+	v14 = minX + (float)((float)(this->field_138 * 0.25) * v13);
+	if(v14 != 0.0) {
+		minX = this->field_168.minX + (float)((float)(this->field_138 * 0.25) * v13);
+	}
+	v15 = minX + (float)(v13 * 0.015625);
+	v16 = this->field_168.maxY - minY;
+	v17 = minY + (float)((float)(this->field_13C * 0.25) * v16);
+	if(v17 != 0.0) {
+		minY = minY + (float)((float)(this->field_13C * 0.25) * v16);
+	}
+	v18 = minY + (float)(v16 * 0.015609);
+	v19 = this->_scale * 0.1;
+	v20 = (float)(this->prevX + (float)((float)(this->posX - this->prevX) * a3)) - Particle::xOff;
+	v21 = (float)(this->prevY + (float)((float)(this->posY - this->prevY) * a3)) - Particle::yOff;
+	v22 = (float)(this->prevZ + (float)((float)(this->posZ - this->prevZ) * a3)) - Particle::zOff;
+	v23 = this->getBrightness(a3);
+	a2.color(v23 * this->rColMul, v23 * this->gColMul, v23 * this->bColMul);
+	v24 = a4 * v19;
+	v25 = a7 * v19;
+	v26 = a6 * v19;
+	v27 = a5 * v19;
+	v28 = a8 * v19;
+	v29 = v21 - v27;
+	a2.vertexUV((float)(v20 - v24) - v25, v21 - v27, (float)(v22 - v26) - v28, v14, v18);
+	v30 = v21 + v27;
+	a2.vertexUV((float)(v20 - v24) + v25, v30, (float)(v22 - v26) + v28, v14, v17);
+	v31 = v20 + v24;
+	v32 = v22 + v26;
+	a2.vertexUV(v31 + v25, v30, v32 + v28, v15, v17);
+	a2.vertexUV(v31 - v25, v29, v32 - v28, v15, v18);
+}

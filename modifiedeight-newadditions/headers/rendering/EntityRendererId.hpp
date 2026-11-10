@@ -1,0 +1,48 @@
+#pragma once
+#include <_types.h>
+
+enum EntityRendererId
+{
+	ER_NONE = 0,
+	UNKNOWN = 1,
+	TNT = 2,
+	HUMANOID = 3,
+	ITEM_ENTITY = 4,
+	TRIPOD_CAMERA = 5,
+	CHICKEN = 6,
+	COW = 7,
+	PIG = 8,
+	SHEEP = 9,
+	ZOMBIE = 11,
+	SKELETON = 12,
+	SPIDER = 13,
+	CREEPER = 14,
+	ARROW = 15,
+	PLAYER = 16,
+	THROWNEGG = 17,
+	THROWNSNOWBALL = 18,
+	PAINTING = 19,
+	FALLINGTILE = 20,
+	MINECART = 21,
+	SQUID = 22,
+	COD = 23,
+	SALMON = 24,
+	PUFFERFISH = 25,
+	TROPICAL_FISH = 26,
+	FISHING_HOOK = 27,
+	SLIME = 28,
+	WOLF = 29,
+	POLAR_BEAR = 30,
+	FOX = 31,
+	TURTLE = 32,
+	GIANT = 33,
+	VILLAGER = 34,
+	ZOMBIE_VILLAGER = 35,
+	ITEM_FRAME = 36,
+	ARMOR_STAND = 37,
+	FROG = 38,
+	OCELOT = 39,
+	BOAT = 40,
+
+	LENGTH
+};
