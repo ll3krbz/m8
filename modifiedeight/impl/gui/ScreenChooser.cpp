@@ -1,5 +1,6 @@
 #include <gui/ScreenChooser.hpp>
 #include <gui/screens/Touch_StartMenuScreen.hpp>
+#include <gui/screens/FirstLaunchAcknowledgementScreen.hpp>
 #include <gui/screens/Touch_SelectWorldScreen.hpp>
 #include <gui/screens/Touch_JoinGameScreen.hpp>
 #include <gui/screens/PauseScreen.hpp>
@@ -10,7 +11,9 @@
 
 Screen* ScreenChooser::createScreen(ScreenId id){
 	switch(id){
-		case START_MENU_SCREEN: return new Touch::StartMenuScreen();
+		case START_MENU_SCREEN:
+			if (!this->minecraft->options.firstLaunchAcknowledged) return new FirstLaunchAcknowledgementScreen();
+			return new Touch::StartMenuScreen();
 		case JOIN_GAME_SCREEN: return new Touch::JoinGameScreen();
 		case PAUSE_SCREEN_0: return new PauseScreen(0);
 		case PAUSE_SCREEN_1: return new PauseScreen(1);

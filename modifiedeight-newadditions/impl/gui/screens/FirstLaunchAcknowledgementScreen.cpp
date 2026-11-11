@@ -51,29 +51,30 @@ void FirstLaunchAcknowledgementScreen::init() {
 }
 
 void FirstLaunchAcknowledgementScreen::setupPositions() {
-	int32_t panelTop = 34;
+	bool_t compact = this->height < 260;
+	int32_t panelTop = compact ? 28 : 34;
 	int32_t panelLeft = 10;
 	int32_t panelWidth = this->width - 20;
-	int32_t textWidth = panelWidth - 32;
+	int32_t textWidth = panelWidth - (compact ? 16 : 32);
 	this->headerButton->posX = 0;
 	this->headerButton->posY = 0;
 	this->headerButton->width = this->width;
 	this->headerButton->height = 26;
-	this->panelLayer->setSize((float)panelWidth, 170.0f);
+	int32_t panelHeight = compact ? this->height - panelTop - 42 : 170;
+	this->panelLayer->setSize((float)panelWidth, (float)panelHeight);
 	this->messageLabel->width = textWidth;
-	this->messageLabel->height = 120;
+	this->messageLabel->height = panelHeight - 42;
 	this->messageLabel->field_38 = true;
-	this->messageLabel->posX = panelLeft + 16;
-	this->messageLabel->posY = panelTop + 16;
+	this->messageLabel->posX = panelLeft + (compact ? 8 : 16);
+	this->messageLabel->posY = panelTop + 8;
 	this->messageLabel->setupPositions();
 	this->feedbackLabel->width = panelWidth - 32;
 	this->feedbackLabel->posX = panelLeft + 16;
-	this->feedbackLabel->posY = panelTop + 180;
-
-	int32_t buttonWidth = 130;
-	this->confirmButton->width = buttonWidth;
-	this->confirmButton->posX = (this->width - buttonWidth) / 2;
-	this->confirmButton->posY = panelTop + 170;
+	this->feedbackLabel->posY = panelTop + panelHeight + 2;
+	this->confirmButton->width = 64;
+	this->confirmButton->height = 18;
+	this->confirmButton->posX = this->width - this->confirmButton->width - 4;
+	this->confirmButton->posY = 4;
 }
 
 bool_t FirstLaunchAcknowledgementScreen::handleBackEvent(bool_t a2) {

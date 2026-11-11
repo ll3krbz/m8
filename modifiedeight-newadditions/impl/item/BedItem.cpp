@@ -26,8 +26,8 @@ bool_t BedItem::useOn(ItemInstance* a2, Player* a3, Level* a4, int32_t a5, int32
 		return 0;
 	}
 	v12 = a6 + 1;
-	v22 = Tile::coloredBeds[a2->getAuxValue() & 15];
-	if (!v22) v22 = Tile::coloredBeds[0];
+	v22 = (this->itemID == 355) ? Tile::bed : Tile::coloredBeds[a2->getAuxValue() & 15];
+	if (!v22) v22 = Tile::bed;
 	v13 = (float)((float)(a3->yaw * 4.0) / 360.0) + 0.5;
 	v14 = (int32_t)v13;
 	if(v13 < (float)(int32_t)v13) {
@@ -72,12 +72,16 @@ bool_t BedItem::useOn(ItemInstance* a2, Player* a3, Level* a4, int32_t a5, int32
 }
 
 std::string BedItem::getDescriptionId(const struct ItemInstance* item) {
+	if (this->itemID == 355) return "item.bed";
 	const char* colors[] = {"white", "orange", "magenta", "lightBlue", "yellow", "lime", "pink", "gray", "silver", "cyan", "purple", "blue", "brown", "green", "red", "black"};
 	int color = item->getAuxValue() & 15;
 	return "item.bed." + std::string(colors[color]);
 }
 
 TextureUVCoordinateSet* BedItem::getIcon(int32_t damage, int32_t a3, bool_t a4) {
+	if (this->itemID == 355) {
+		return this->getTextureItem("bed")->getUV(0);
+	}
 	const char* colors[] = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "silver", "cyan", "purple", "blue", "brown", "green", "red", "black"};
 	int color = damage & 15;
 	std::string texName = "bed_" + std::string(colors[color]);

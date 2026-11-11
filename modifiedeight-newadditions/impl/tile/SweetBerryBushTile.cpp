@@ -100,8 +100,8 @@ bool_t SweetBerryBushTile::use(Level* level, int32_t x, int32_t y, int32_t z, Pl
 			}
 		}
 	}
-	if (age >= 2) {
-		int32_t dropCount = (age == 3) ? (2 + (rand() % 2)) : 1;
+	if (age == 3) {
+		int32_t dropCount = (rand() % 2) + 2;
 		if (!level->isClientMaybe && Item::sweetBerries) {
 			for (int32_t i = 0; i < dropCount; ++i) {
 				this->popResource(level, x, y, z, ItemInstance(Item::sweetBerries, 1, 0));
@@ -127,7 +127,7 @@ int32_t SweetBerryBushTile::getResource(int32_t data, Random* rand) {
 	if ((data & 3) >= 3) {
 		return Item::sweetBerries ? Item::sweetBerries->itemID : 0;
 	}
-	return this->blockID;
+	return 0;
 }
 
 int32_t SweetBerryBushTile::getResourceCount(Random* rand) {

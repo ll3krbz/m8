@@ -142,6 +142,8 @@ void Options::update() {
 							this->readBool(v13[i + 1], this->discordIntegration);
 						} else if(v13[i] == "options.swapjumpandsneak") {
 							this->readBool(v13[i + 1], this->swapJumpAndSneak);
+						} else if(v13[i] == "options.firstLaunchAcknowledged") {
+							this->readBool(v13[i + 1], this->firstLaunchAcknowledged);
 						} else if(v13[i] == "options.animatewater") {
 							this->readBool(v13[i + 1], this->animateWater);
 						} else if(v13[i] == "options.animatelava") {
@@ -372,6 +374,7 @@ void Options::save(void) {
 	this->addOptionToSaveOutput(v4, "options.animatewater", this->animateWater);
 	this->addOptionToSaveOutput(v4, "options.animatelava", this->animateLava);
 	this->addOptionToSaveOutput(v4, "options.animatefire", this->animateFire);
+	this->addOptionToSaveOutput(v4, "options.firstLaunchAcknowledged", this->firstLaunchAcknowledged);
 	this->addOptionToSaveOutput(v4, "options.smoothchunks", this->smoothChunks);
 	this->addOptionToSaveOutput(v4, "options.chatcolor", this->chatColor);
 	this->addOptionToSaveOutput(v4, "options.chatbgcolor", this->chatBgColor);
@@ -461,6 +464,7 @@ void Options::initDefaultValues(void) {
 	this->debugScreen = 0;
 	this->discordIntegration = 1;
 	this->swapJumpAndSneak = 0;
+	this->firstLaunchAcknowledged = 0;
 	this->smoothChunks = 1;
 	this->animateWater = 1;
 	this->animateLava = 1;

@@ -70,7 +70,7 @@ def main():
             ident = "asset_" + c_ident(rel)
             with open(full, "rb") as af:
                 size = len(af.read())
-            f.write('    {"%s", %s, %zu},\n' % (rel, ident, size))
+            f.write('    {"%s", %s, %d},\n' % (rel, ident, size))
         f.write("};\n")
         f.write("\n")
         f.write("size_t embedded_asset_count(void) {\n")

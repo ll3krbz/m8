@@ -133,6 +133,7 @@ struct Options{
 	bool_t lodChunks;
 	bool_t smoothChunks;
 	bool_t swapJumpAndSneak;
+	bool_t firstLaunchAcknowledged;
 	char_t field_109;
 	char_t field_10A;
 	char_t field_10B;

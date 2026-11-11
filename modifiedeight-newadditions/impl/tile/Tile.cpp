@@ -575,7 +575,7 @@ void Tile::initTiles(std::shared_ptr<TextureAtlas> a1) {
       "bed_yellow", "bed_lime", "bed_pink", "bed_gray",
       "bed_silver", "bed_cyan", "bed_purple", "bed_blue",
       "bed_brown", "bed_green", "bed_red", "bed_black"};
-  Tile::bed = (new BedTile(26, "bed_red", 14))
+  Tile::bed = (new BedTile(25, "bed", 0))
                   ->init()
                   ->setDestroyTime(0.2)
                   ->setSoundType(Tile::SOUND_WOOD)

@@ -540,7 +540,7 @@ void Gui::render(float a2, bool_t a3, int32_t a4, int32_t a5) {
                       (int)floorf(this->minecraftInst->player->posY -
                                   this->minecraftInst->player->ridingHeight),
                       (int)floorf(this->minecraftInst->player->posZ));
-              font->drawShadow(coordsText, 2.0f, startY, 0xFFFFFF);
+              font->drawShadow(coordsText, 2.0f, startY, 0xFFFFFFFF);
               startY += 10.0f;
             }
             if (this->minecraftInst->options.showFps) {

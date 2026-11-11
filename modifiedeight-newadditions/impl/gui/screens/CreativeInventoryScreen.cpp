@@ -142,7 +142,7 @@ static void addTabItem(int tab, Tile *tile, int count = 1, int aux = 0) {
   if (tile && tab >= 0 && tab < CreativeInventoryScreen::NUM_TABS) {
     if (s_creativeIsServer) {
       if (!Item::isVanilla081Id(tile->blockID)) return;
-      if (tile == Tile::bed && aux != 14) return;
+      if (tile == Tile::bed && aux != 0) return;
     }
     CreativeInventoryScreen::filteredItems[tab].emplace_back(
         ItemInstance(tile, count, aux));
@@ -152,7 +152,11 @@ static void addTabItem(int tab, Item *item, int count = 1, int aux = 0) {
   if (item && tab >= 0 && tab < CreativeInventoryScreen::NUM_TABS) {
     if (s_creativeIsServer) {
       if (!Item::isVanilla081Id(item->itemID)) return;
-      if (item == Item::bed && aux != 14) return;
+      if (item == Item::bed && aux != 0) return;
+      if (item == Item::bed) {
+        CreativeInventoryScreen::filteredItems[tab].emplace_back(ItemInstance(355, count, aux));
+        return;
+      }
       if (item == Item::mushroomStew) return;
       if (item == Item::mobPlacer && aux != 10 && aux != 11 && aux != 12 && aux != 13 && aux != 32 && aux != 33 && aux != 34 && aux != 35 && aux != 36) return;
       if (item == Item::fish_raw || item == Item::fish_cooked || item == Item::salmon_raw || item == Item::salmon_cooked || item == Item::clownfish || item == Item::pufferfish) return;
