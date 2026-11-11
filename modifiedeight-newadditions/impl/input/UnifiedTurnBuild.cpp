@@ -277,11 +277,6 @@ LABEL_38:
 				}
 			}
 		}
-		if ( movement )
-		{
-			v21 = 0.0;
-			v20 = 0.0;
-		}
 		this->field_B4 = v11;
 		this->field_B8 = v12;
 	}

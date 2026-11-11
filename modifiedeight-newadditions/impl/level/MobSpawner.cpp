@@ -8,6 +8,7 @@
 #include <entity/Frog.hpp>
 #include <entity/Player.hpp>
 #include <level/Level.hpp>
+#include <level/LevelHeight.hpp>
 #include <level/MobSpawner.hpp>
 #include <perf/Stopwatch.hpp>
 #include <tile/Tile.hpp>
@@ -72,6 +73,23 @@ bool_t MobSpawner::isSpawnPositionOk(const MobCategory &a1, Level *level,
   }
   return 1;
 }
+
+static int32_t getCreatureSpawnY(Level *level, int32_t x, int32_t z) {
+  int32_t top = level->getTopSolidBlock(x, z);
+  if (top > 1 && top < 126) {
+    return top;
+  }
+  int32_t maxY = LevelHeight::maxY();
+  int32_t y = maxY;
+  while (y > 1) {
+    if (!level->isSolidBlockingTile(x, y, z) &&
+        level->isSolidBlockingTile(x, y - 1, z)) {
+      return y;
+    }
+    --y;
+  }
+  return -1;
+}
 void MobSpawner::makeBabyMob(Mob *a1, float chance) {
   static Random randomInstance2(0x5DEEA8F);
   if (a1->getCreatureBaseType() == 2) {
@@ -125,10 +143,7 @@ void MobSpawner::postProcessSpawnMobs(Level *a2, Biome *a3, int32_t a4,
       if (v34 < v60) {
         int v56 = 4;
         while (1) {
-          int top = a2->getHeightmap(v35, v50) + 1;
-          if (top <= 2) {
-            top = a2->getTopSolidBlock(v35, v50) + 1;
-          }
+          int top = getCreatureSpawnY(a2, v35, v50);
           bool v43;
           if (MobSpawner::isSpawnPositionOk(MobCategory::creature, a2, v35, top,
                                             v50)) {
@@ -320,10 +335,7 @@ bool_t MobSpawner::tick(Level *level, bool_t hostiles, bool_t animals) {
         if (!foundCaveFloor)
           continue;
       } else if (isCreature) {
-        int top = level->getHeightmap(x, z) + 1;
-        if (top <= 2) {
-          top = level->getTopSolidBlock(x, z) + 1;
-        }
+        int top = getCreatureSpawnY(level, x, z);
         if (top > 1 && top < 126) {
           y = top;
         } else {
@@ -360,10 +372,7 @@ bool_t MobSpawner::tick(Level *level, bool_t hostiles, bool_t animals) {
           bool isSwamp = (currentBiome == Biome::swampland);
 
           if (isCreature) {
-            int topS = level->getHeightmap(sx, sz) + 1;
-            if (topS <= 2) {
-              topS = level->getTopSolidBlock(sx, sz) + 1;
-            }
+            int topS = getCreatureSpawnY(level, sx, sz);
             if (topS > 1 && topS < 126) {
               sy = topS;
             }

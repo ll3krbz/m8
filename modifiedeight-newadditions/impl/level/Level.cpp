@@ -2405,7 +2405,7 @@ struct Biome* Level::getBiome(int32_t x, int32_t z) {
 static int32_t _D6E4DF90 = 0;
 void Level::tick() {
 	if(!this->isClientMaybe) {
-		if(_D6E4DF90 + 1 > 1) {
+		if(_D6E4DF90 + 1 > 0) {
 			_D6E4DF90 = 0;
 			bool spawnMonsters = this->spawnMonstersMaybe;
 			bool spawnAnimals = this->spawnAnimalsMaybe;

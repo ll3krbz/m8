@@ -287,7 +287,6 @@ void Item::initItems(std::shared_ptr<TextureAtlas> a2){
 	Item::sugar = (new Item(97))->setIcon("sugar", 0)->setCategory(4, 4)->setDescriptionId("sugar");
 	Item::cake = (new TilePlanterItem(98, Tile::cake))->setMaxStackSize(1)->setIcon("cake", 0)->setCategory(2, 4)->setDescriptionId("cake");
 	Item::bed = (new BedItem(99))->setMaxStackSize(1)->setIcon("bed", 0)->setCategory(5, 1)->setDescriptionId("bed");
-	(new BedItem(355))->setMaxStackSize(1)->setIcon("bed", 0)->setCategory(5, 1)->setDescriptionId("bed");
 	Item::shears = (new ShearsItem(103))->setIcon("shears", 0)->setCategory(3, 2)->setDescriptionId("shears");
 	Item::melon = (new FoodItem(104, 2, 0.6, 0))->setIcon("melon", 0)->setCategory(2, 4)->setDescriptionId("melon");
 	Item::seeds_pumpkin = (new SeedItem(105, Tile::pumpkinStem->blockID, Tile::farmland->blockID))->setIcon("seeds_pumpkin", 0)->setCategory(4, 4)->setDescriptionId("seedsPumpkin");

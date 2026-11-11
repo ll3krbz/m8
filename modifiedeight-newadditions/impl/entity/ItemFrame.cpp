@@ -163,7 +163,7 @@ void ItemFrame::addAdditonalSaveData(CompoundTag* tag) {
 
 void ItemFrame::setDir(int32_t dir) {
 	this->direction = dir;
-	float dist = 0.5675f;
+	float dist = 0.5f;
 	float px = (float)this->tileX + 0.5f;
 	float py = (float)this->tileY + 0.5f;
 	float pz = (float)this->tileZ + 0.5f;
