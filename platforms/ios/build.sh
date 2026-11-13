@@ -179,6 +179,7 @@ for target in $NBC_TARGETS; do
     mkdir -p "build-$NBC_CLIENT-$target"
     cd "build-$NBC_CLIENT-$target"
     cmake "$platformdir/../.." \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DCMAKE_BUILD_TYPE="$build" \
         -DCMAKE_SYSTEM_NAME=Darwin \
         -DNBC_PLATFORM=ios \

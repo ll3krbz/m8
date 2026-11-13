@@ -35,6 +35,7 @@ jobs:
           cd build/
           ccache -z || true
           cmake .. -DDYNAMICSOUNDS=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           make -j8
@@ -89,6 +90,7 @@ jobs:
           ccache -z || true
 
           cmake .. -DDYNAMICSOUNDS=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_SYSTEM_NAME=Windows \
             -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
             -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
