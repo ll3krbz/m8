@@ -159,6 +159,7 @@ void MusicEngine::stop() {
 	this->streamData = nullptr;
 	this->streamBytesLeft = 0;
 	this->isPlaying = false;
+	this->pauseSeconds = 20.0f; //TODO !
 }
 
 void MusicEngine::pauseStream() {

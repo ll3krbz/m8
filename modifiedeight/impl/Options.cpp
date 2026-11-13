@@ -53,11 +53,14 @@ Options::Option Options::Option::ANIMATE_LAVA{0, "options.animatelava", 42};
 Options::Option Options::Option::ANIMATE_FIRE{0, "options.animatefire", 43};
 Options::Option Options::Option::SWAP_JUMP_AND_SNEAK{0, "options.swapjumpandsneak", 46};
 Options::Option Options::Option::SMOOTH_CHUNKS{0, "options.smoothchunks", 47};
+Options::Option Options::Option::SHOW_CAPE{0, "options.showcape", 62};
+Options::Option Options::Option::SKIN_SOURCE{3, "options.skinsource", 63};
 std::vector<int32_t> Options::DIFFICULTY_LEVELS = {0, 2};
 std::vector<int32_t> Options::RENDERDISTANCE_LEVELS = {3, 2, 1, 0, -1, -2, -3};
 std::vector<int32_t> Options::CHAT_COLOR_LEVELS = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 std::vector<int32_t> Options::CHAT_BG_COLOR_LEVELS = {0, 1, 2, 3, 4};
 std::vector<int32_t> Options::NEW_ADDITIONS_LEVELS = {0, 1};
+std::vector<int32_t> Options::SKIN_SOURCE_LEVELS = {0, 1};
 
 void Options::update() {
 	std::vector<std::string> v13 = this->settingFolderPath.getOptionStrings();
@@ -158,6 +161,10 @@ void Options::update() {
 							this->readInt(v13[i + 1], this->chatBgColor);
 						} else if(v13[i] == "options.guiscale") {
 							this->readInt(v13[i + 1], this->guiScale);
+						} else if(v13[i] == "options.showcape") {
+							this->readBool(v13[i + 1], this->showCape);
+						} else if(v13[i] == "options.skinsource") {
+							this->readInt(v13[i + 1], this->skinSource);
 						} else if(v13[i] == OptionStrings::Game_ThirdPerson) {
 							this->readBool(v13[i + 1], this->thirdPerson);
 						} else if(v13[i] == OptionStrings::Controls_UseTouchScreen) {
@@ -267,6 +274,10 @@ void Options::toggle(const Options::Option* a2, int32_t a3) {
 		this->fogEnabled ^= 1u;
 	} else if(a2 == &Options::Option::SHOW_FPS) {
 		this->showFps ^= 1u;
+	} else if(a2 == &Options::Option::SHOW_CAPE) {
+		this->showCape ^= 1u;
+	} else if(a2 == &Options::Option::SKIN_SOURCE) {
+		this->skinSource = (this->skinSource + 1) & 1;
 	} else if(a2 == &Options::Option::DEBUG_SCREEN) {
 		this->debugScreen ^= 1u;
 	} else if(a2 == &Options::Option::DISCORD_RPC) {
@@ -316,6 +327,8 @@ void Options::set(const Options::Option* a2, int32_t a3) {
 		this->chatBgColor = a3;
 	} else if(a2 == &Options::Option::NEW_ADDITIONS) {
 		this->newAdditions = a3;
+	} else if(a2 == &Options::Option::SKIN_SOURCE) {
+		this->skinSource = a3 & 1;
 	} else if(a2 == &Options::Option::GUI_SCALE) {
 		this->guiScale = a3 & 3;
 	}
@@ -368,6 +381,8 @@ void Options::save(void) {
 	this->addOptionToSaveOutput(v4, "options.marketplace", this->marketplace);
 	this->addOptionToSaveOutput(v4, "options.fogenabled", this->fogEnabled);
 	this->addOptionToSaveOutput(v4, "options.showfps", this->showFps);
+	this->addOptionToSaveOutput(v4, "options.showcape", this->showCape);
+	this->addOptionToSaveOutput(v4, "options.skinsource", this->skinSource);
 	this->addOptionToSaveOutput(v4, "options.debugscreen", this->debugScreen);
 	this->addOptionToSaveOutput(v4, "options.discordrpc", this->discordIntegration);
 	this->addOptionToSaveOutput(v4, "options.swapjumpandsneak", this->swapJumpAndSneak);
@@ -463,6 +478,8 @@ void Options::initDefaultValues(void) {
 	this->showFps = 0;
 	this->debugScreen = 0;
 	this->discordIntegration = 1;
+	this->showCape = 1;
+	this->skinSource = 0;
 	this->swapJumpAndSneak = 0;
 	this->firstLaunchAcknowledged = 0;
 	this->smoothChunks = 1;
@@ -565,6 +582,9 @@ std::vector<int> Options::getValues(const Options::Option* a2) {
 	if(a2 == &Options::Option::NEW_ADDITIONS) {
 		return Options::NEW_ADDITIONS_LEVELS;
 	}
+	if(a2 == &Options::Option::SKIN_SOURCE) {
+		return Options::SKIN_SOURCE_LEVELS;
+	}
 	if(a2 == &Options::Option::GUI_SCALE) {
 		return {0, 1, 2, 3};
 	}
@@ -659,6 +679,9 @@ int32_t Options::getIntValue(const Options::Option* a2) {
 	if(a2 == &Options::Option::NEW_ADDITIONS) {
 		return this->newAdditions;
 	}
+	if(a2 == &Options::Option::SKIN_SOURCE) {
+		return this->skinSource;
+	}
 	if(a2 == &Options::Option::GUI_SCALE) {
 		return this->guiScale;
 	}
@@ -680,6 +703,10 @@ std::string Options::getDescription(const Options::Option* a2, std::string a4) {
 	if(a2 == &Options::Option::NEW_ADDITIONS) {
 		std::string modes[] = {"Modded", "New Additions"};
 		if(this->newAdditions >= 0 && this->newAdditions <= 1) return a4 + ": " + modes[this->newAdditions];
+	}
+	if(a2 == &Options::Option::SKIN_SOURCE) {
+		std::string modes[] = {"Mojang API", "Local API"};
+		if(this->skinSource >= 0 && this->skinSource <= 1) return a4 + ": " + modes[this->skinSource];
 	}
 	if(a2 == &Options::Option::RENDER_DISTANCE) {
 		std::string modes[] = {"Tiny", "Short", "Normal", "Far", "Very Far", "Ultra", "Extreme"};
@@ -753,6 +780,8 @@ bool_t Options::getBooleanValue(const Options::Option* a2) {
 		return this->fogEnabled;
 	} else if(a2 == &Options::Option::SHOW_FPS) {
 		return this->showFps;
+	} else if(a2 == &Options::Option::SHOW_CAPE) {
+		return this->showCape;
 	} else if(a2 == &Options::Option::DEBUG_SCREEN) {
 		return this->debugScreen;
 	} else if(a2 == &Options::Option::DISCORD_RPC) {

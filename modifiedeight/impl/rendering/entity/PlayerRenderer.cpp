@@ -1,6 +1,9 @@
+#include <Options.hpp>
 #include <entity/Player.hpp>
 #include <item/ArmorItem.hpp>
 #include <map>
+#include <math.h>
+#include <math/Mth.hpp>
 #include <mutex>
 #include <rendering/EntityRenderDispatcher.hpp>
 #include <rendering/Font.hpp>
@@ -9,6 +12,7 @@
 #include <rendering/entity/PlayerRenderer.hpp>
 #include <rendering/model/HumanoidModel.hpp>
 #include <stb_image.h>
+#include <stdlib.h>
 #include <thread>
 #include <util/CrossPlatformWeb.hpp>
 
@@ -118,6 +122,7 @@ int32_t PlayerRenderer::prepareArmor(Mob *a2_, int32_t armour, float a4) {
   hmodel2->leftLegModel.field_1D = v10;
   this->setArmor(hmodel2);
   hmodel2->field_4 = a2->isRiding();
+  hmodel2->field_31A = a2->isSneaking();
   return 1;
 }
 
@@ -135,8 +140,105 @@ int32_t PlayerRenderer::prepareArmor(Mob *a2_, int32_t armour, float a4) {
 
 static std::map<std::string, unsigned char *> g_pendingSkinsData;
 static std::map<std::string, std::pair<int, int>> g_pendingSkinsDims;
+static std::map<std::string, unsigned char *> g_pendingCapesData;
+static std::map<std::string, std::pair<int, int>> g_pendingCapesDims;
 static std::map<std::string, uint64_t> g_lastSkinCheckTime;
 static std::mutex skinMutex;
+
+static bool isBase64Char(unsigned char c) {
+  return (isalnum(c) || (c == '+') || (c == '/'));
+}
+
+static std::string decodeBase64(const std::string &encoded) {
+  static const std::string b64 =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string out;
+  int in_len = (int)encoded.size();
+  int i = 0, in_ = 0;
+  unsigned char a4[4], a3[3];
+  while (in_len-- && (encoded[in_] != '=') && isBase64Char(encoded[in_])) {
+    a4[i++] = encoded[in_++];
+    if (i == 4) {
+      for (i = 0; i < 4; i++)
+        a4[i] = (unsigned char)b64.find(a4[i]);
+      a3[0] = (a4[0] << 2) + ((a4[1] & 0x30) >> 4);
+      a3[1] = ((a4[1] & 0xf) << 4) + ((a4[2] & 0x3c) >> 2);
+      a3[2] = ((a4[2] & 0x3) << 6) + a4[3];
+      for (i = 0; i < 3; i++)
+        out += a3[i];
+      i = 0;
+    }
+  }
+  if (i) {
+    for (int j = i; j < 4; j++)
+      a4[j] = 0;
+    for (int j = 0; j < 4; j++)
+      a4[j] = (unsigned char)b64.find(a4[j]);
+    a3[0] = (a4[0] << 2) + ((a4[1] & 0x30) >> 4);
+    a3[1] = ((a4[1] & 0xf) << 4) + ((a4[2] & 0x3c) >> 2);
+    a3[2] = ((a4[2] & 0x3) << 6) + a4[3];
+    for (int j = 0; j < i - 1; j++)
+      out += a3[j];
+  }
+  return out;
+}
+
+static std::string extractJsonStr(const std::string &json,
+                                  const std::string &key) {
+  std::string search = "\"" + key + "\"";
+  size_t pos = json.find(search);
+  if (pos == std::string::npos)
+    return "";
+  pos = json.find(':', pos + search.size());
+  if (pos == std::string::npos)
+    return "";
+  pos++;
+  while (pos < json.size() && isspace((unsigned char)json[pos]))
+    pos++;
+  if (pos >= json.size() || json[pos] != '"')
+    return "";
+  pos++;
+  size_t end = json.find('"', pos);
+  if (end == std::string::npos)
+    return "";
+  return json.substr(pos, end - pos);
+}
+
+static std::string getMojangTextureUrl(const std::string &username,
+                                       const std::string &textureKey) {
+  if (username.empty())
+    return "";
+  std::string resp = CrossPlatform_DownloadString(
+      "https://api.mojang.com/users/profiles/minecraft/" + username);
+  if (resp.empty()) {
+    resp = CrossPlatform_DownloadString(
+        "http://api.mojang.com/users/profiles/minecraft/" + username);
+  }
+  if (resp.empty())
+    return "";
+  std::string uuid = extractJsonStr(resp, "id");
+  if (uuid.empty())
+    return "";
+  std::string prof = CrossPlatform_DownloadString(
+      "https://sessionserver.mojang.com/session/minecraft/profile/" + uuid);
+  if (prof.empty()) {
+    prof = CrossPlatform_DownloadString(
+        "http://sessionserver.mojang.com/session/minecraft/profile/" + uuid);
+  }
+  if (prof.empty())
+    return "";
+  std::string encoded = extractJsonStr(prof, "value");
+  if (encoded.empty())
+    return "";
+  std::string decoded = decodeBase64(encoded);
+  size_t texPos = decoded.find("\"" + textureKey + "\"");
+  if (texPos == std::string::npos)
+    return "";
+  size_t urlPos = decoded.find("\"url\"", texPos);
+  if (urlPos == std::string::npos)
+    return "";
+  return extractJsonStr(decoded.substr(urlPos), "url");
+}
 
 static uint64_t getCurrentTimeMillis() {
   return (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -177,14 +279,13 @@ static unsigned char *processSkinImage(const unsigned char *src, int w, int h,
   return out;
 }
 
-static void uploadSkinTexture(const std::string &username,
+static void uploadSkinTexture(const std::string &texName,
                               const unsigned char *px, int w, int h) {
   int outW = 64, outH = 32;
   unsigned char *uploadPx = processSkinImage(px, w, h, outW, outH);
   if (!uploadPx)
     return;
 
-  std::string texName = username + "_skin";
   Textures *tex = EntityRenderer::entityRenderDispatcher->textures;
   if (!tex) {
     free(uploadPx);
@@ -227,38 +328,49 @@ static void uploadSkinTexture(const std::string &username,
 }
 
 static std::vector<unsigned char>
-downloadSkinData(const std::string &username) {
+downloadSkinData(const std::string &username, int skinSource) {
   if (username.empty())
     return {};
 
-  std::vector<std::string> urls = {
-      "https://raw.githubusercontent.com/gameherobrine2/test123/refs/heads/"
-      "main/" +
-          username + ".png",
-      "https://raw.githubusercontent.com/gameherobrine2/test123/main/" +
-          username + ".png",
-      "https://raw.githubusercontent.com/gameherobrine2/test123/master/" +
-          username + ".png",
-      "https://github.com/gameherobrine2/test123/raw/main/" + username + ".png",
-  };
-
-  std::string lowerName = username;
-  for (char &c : lowerName)
-    c = (char)tolower((unsigned char)c);
-  if (lowerName != username) {
-    urls.push_back("https://raw.githubusercontent.com/gameherobrine2/test123/"
-                   "refs/heads/main/" +
-                   lowerName + ".png");
-    urls.push_back(
+  if (skinSource == 1) {
+    std::vector<std::string> urls = {
+        "https://raw.githubusercontent.com/gameherobrine2/test123/refs/heads/"
+        "main/" +
+            username + ".png",
         "https://raw.githubusercontent.com/gameherobrine2/test123/main/" +
-        lowerName + ".png");
-    urls.push_back(
+            username + ".png",
         "https://raw.githubusercontent.com/gameherobrine2/test123/master/" +
-        lowerName + ".png");
+            username + ".png",
+        "https://github.com/gameherobrine2/test123/raw/main/" + username + ".png",
+    };
+
+    std::string lowerName = username;
+    for (char &c : lowerName)
+      c = (char)tolower((unsigned char)c);
+    if (lowerName != username) {
+      urls.push_back("https://raw.githubusercontent.com/gameherobrine2/test123/"
+                     "refs/heads/main/" +
+                     lowerName + ".png");
+      urls.push_back(
+          "https://raw.githubusercontent.com/gameherobrine2/test123/main/" +
+          lowerName + ".png");
+      urls.push_back(
+          "https://raw.githubusercontent.com/gameherobrine2/test123/master/" +
+          lowerName + ".png");
+    }
+
+    for (const auto &url : urls) {
+      auto data = CrossPlatform_DownloadBinary(url);
+      if (!data.empty() && data.size() > 64) {
+        return data;
+      }
+    }
+    return {};
   }
 
-  for (const auto &url : urls) {
-    auto data = CrossPlatform_DownloadBinary(url);
+  std::string mojangSkinUrl = getMojangTextureUrl(username, "SKIN");
+  if (!mojangSkinUrl.empty()) {
+    auto data = CrossPlatform_DownloadBinary(mojangSkinUrl);
     if (!data.empty() && data.size() > 64) {
       return data;
     }
@@ -266,77 +378,135 @@ downloadSkinData(const std::string &username) {
   return {};
 }
 
-void PlayerRenderer::setupPosition(Entity *a2_, float a3, float a4, float a5) {
-  Player *a2 = (Player *)a2_;
-  if (a2) {
-    std::string nick = a2->username;
-    if (nick.empty() && EntityRenderer::entityRenderDispatcher &&
-        EntityRenderer::entityRenderDispatcher->minecraft) {
-      if (a2 == EntityRenderer::entityRenderDispatcher->minecraft->player) {
-        nick =
-            EntityRenderer::entityRenderDispatcher->minecraft->options.username;
-        if (a2->username.empty())
-          a2->username = nick;
+static std::vector<unsigned char>
+downloadCapeData(const std::string &username) {
+  if (username.empty())
+    return {};
+
+  std::string mojangCapeUrl = getMojangTextureUrl(username, "CAPE");
+  if (!mojangCapeUrl.empty()) {
+    auto data = CrossPlatform_DownloadBinary(mojangCapeUrl);
+    if (!data.empty() && data.size() > 64) {
+      return data;
+    }
+  }
+  return {};
+}
+
+static void uploadCapeTexture(const std::string &username,
+                              const unsigned char *px, int w, int h) {
+  int outW = 64, outH = 32;
+  unsigned char *uploadPx = (unsigned char *)calloc(outW * outH * 4, 1);
+  if (!uploadPx) return;
+  for (int y = 0; y < outH && y < h; ++y) {
+    for (int x = 0; x < outW && x < w; ++x) {
+      int si = (y * w + x) * 4;
+      int di = (y * outW + x) * 4;
+      uploadPx[di + 0] = px[si + 0];
+      uploadPx[di + 1] = px[si + 1];
+      uploadPx[di + 2] = px[si + 2];
+      uploadPx[di + 3] = 255;
+    }
+  }
+  std::string texName = username + "_cape";
+  Textures *tex = EntityRenderer::entityRenderDispatcher->textures;
+  if (!tex) { free(uploadPx); return; }
+  auto itTex = tex->textures.find(texName);
+  GLuint texId = 0;
+  if (itTex != tex->textures.end() && itTex->second.glTexId != 0) {
+    texId = itTex->second.glTexId;
+    glBindTexture(GL_TEXTURE_2D, texId);
+    itTex->second.width = outW;
+    itTex->second.height = outH;
+  } else {
+    glGenTextures(1, &texId);
+    glBindTexture(GL_TEXTURE_2D, texId);
+    TextureData td;
+    td.width = outW; td.height = outH; td.pixels = nullptr; td.glTexId = texId;
+    tex->textures.erase(texName);
+    tex->textures.insert(std::pair<std::string, TextureData>(texName, std::move(td)));
+  }
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, outW, outH, 0, GL_RGBA, GL_UNSIGNED_BYTE, uploadPx);
+  tex->currentTexture = 0;
+  free(uploadPx);
+}
+
+void PlayerRenderer::updateSkin(Player *a2) {
+  if (!a2) return;
+  std::string nick = a2->username;
+  if (nick.empty() && EntityRenderer::entityRenderDispatcher &&
+      EntityRenderer::entityRenderDispatcher->minecraft) {
+    if (a2 == EntityRenderer::entityRenderDispatcher->minecraft->player) {
+      nick =
+          EntityRenderer::entityRenderDispatcher->minecraft->options.username;
+      if (a2->username.empty())
+        a2->username = nick;
+    }
+  }
+
+  if (!nick.empty()) {
+    int skinSource = (Options::instance && Options::instance->skinSource == 1) ? 1 : 0;
+    std::string sourceTag = (skinSource == 1) ? "local" : "mojang";
+    std::string texName = nick + "_skin_" + sourceTag;
+    std::string cachePath = "skin_cache/" + nick + "_" + sourceTag + ".png";
+    std::string capeTexName = nick + "_cape";
+    Textures *tex = EntityRenderer::entityRenderDispatcher ? EntityRenderer::entityRenderDispatcher->textures : nullptr;
+
+    if (tex && (tex->textures.find(texName) == tex->textures.end() ||
+                tex->textures[texName].glTexId == 0)) {
+      mkdirPortable("skin_cache");
+      int cw = 0, ch = 0, cch = 0;
+      unsigned char *cachedPx =
+          stbi_load(cachePath.c_str(), &cw, &ch, &cch, STBI_rgb_alpha);
+      if (cachedPx) {
+        uploadSkinTexture(texName, cachedPx, cw, ch);
+        stbi_image_free(cachedPx);
       }
     }
 
-    if (!nick.empty()) {
-      std::string texName = nick + "_skin";
-      Textures *tex = EntityRenderer::entityRenderDispatcher->textures;
-
-      if (tex && (tex->textures.find(texName) == tex->textures.end() ||
-                  tex->textures[texName].glTexId == 0)) {
-        mkdirPortable("skin_cache");
-        std::string cachePath = "skin_cache/" + nick + ".png";
-        int cw = 0, ch = 0, cch = 0;
-        unsigned char *cachedPx =
-            stbi_load(cachePath.c_str(), &cw, &ch, &cch, STBI_rgb_alpha);
-        if (cachedPx) {
-          uploadSkinTexture(nick, cachedPx, cw, ch);
-          stbi_image_free(cachedPx);
-        }
+    if (tex && (tex->textures.find(capeTexName) == tex->textures.end() ||
+                tex->textures[capeTexName].glTexId == 0)) {
+      std::string capeCache = "skin_cache/" + nick + "_cape.png";
+      int cw2 = 0, ch2 = 0, cch2 = 0;
+      unsigned char *capePx =
+          stbi_load(capeCache.c_str(), &cw2, &ch2, &cch2, STBI_rgb_alpha);
+      if (capePx) {
+        uploadCapeTexture(nick, capePx, cw2, ch2);
+        stbi_image_free(capePx);
       }
+    }
 
-      uint64_t now = getCurrentTimeMillis();
-      bool doCheck = false;
-      {
-        std::lock_guard<std::mutex> lock(skinMutex);
-        if (g_lastSkinCheckTime.find(nick) == g_lastSkinCheckTime.end() ||
-            now - g_lastSkinCheckTime[nick] >= 15000) {
-          g_lastSkinCheckTime[nick] = now;
-          doCheck = true;
-        }
+    uint64_t now = getCurrentTimeMillis();
+    bool doSkinCheck = false;
+    bool doCapeCheck = false;
+    {
+      std::lock_guard<std::mutex> lock(skinMutex);
+      if (g_lastSkinCheckTime.find(texName) == g_lastSkinCheckTime.end() ||
+          now - g_lastSkinCheckTime[texName] >= 15000) {
+        g_lastSkinCheckTime[texName] = now;
+        doSkinCheck = true;
       }
+      if (g_lastSkinCheckTime.find(capeTexName) == g_lastSkinCheckTime.end() ||
+          now - g_lastSkinCheckTime[capeTexName] >= 15000) {
+        g_lastSkinCheckTime[capeTexName] = now;
+        doCapeCheck = true;
+      }
+    }
 
-      if (doCheck) {
-        std::thread([nick]() {
-          auto bin = downloadSkinData(nick);
+    if (doSkinCheck || doCapeCheck) {
+      std::thread([nick, skinSource, texName, cachePath, doSkinCheck, doCapeCheck]() {
+        if (doSkinCheck) {
+          auto bin = downloadSkinData(nick, skinSource);
           if (!bin.empty()) {
             mkdirPortable("skin_cache");
-            std::string cachePath = "skin_cache/" + nick + ".png";
-            bool isDifferent = true;
-            FILE *rf = fopen(cachePath.c_str(), "rb");
-            if (rf) {
-              fseek(rf, 0, SEEK_END);
-              long sz = ftell(rf);
-              fseek(rf, 0, SEEK_SET);
-              if (sz == (long)bin.size()) {
-                std::vector<unsigned char> diskBuf(sz);
-                if (fread(diskBuf.data(), 1, sz, rf) == (size_t)sz) {
-                  if (memcmp(diskBuf.data(), bin.data(), sz) == 0) {
-                    isDifferent = false;
-                  }
-                }
-              }
-              fclose(rf);
-            }
-
-            if (isDifferent) {
-              FILE *wf = fopen(cachePath.c_str(), "wb");
-              if (wf) {
-                fwrite(bin.data(), 1, bin.size(), wf);
-                fclose(wf);
-              }
+            FILE *wf = fopen(cachePath.c_str(), "wb");
+            if (wf) {
+              fwrite(bin.data(), 1, bin.size(), wf);
+              fclose(wf);
             }
 
             int w, h, ch;
@@ -344,34 +514,83 @@ void PlayerRenderer::setupPosition(Entity *a2_, float a3, float a4, float a5) {
                 bin.data(), (int)bin.size(), &w, &h, &ch, STBI_rgb_alpha);
             if (px) {
               std::lock_guard<std::mutex> lock(skinMutex);
-              if (g_pendingSkinsData.find(nick) != g_pendingSkinsData.end()) {
-                stbi_image_free(g_pendingSkinsData[nick]);
+              if (g_pendingSkinsData.find(texName) != g_pendingSkinsData.end()) {
+                stbi_image_free(g_pendingSkinsData[texName]);
               }
-              g_pendingSkinsData[nick] = px;
-              g_pendingSkinsDims[nick] = {w, h};
+              g_pendingSkinsData[texName] = px;
+              g_pendingSkinsDims[texName] = {w, h};
             }
           }
-        }).detach();
-      }
-
-      {
-        std::lock_guard<std::mutex> lock(skinMutex);
-        auto it = g_pendingSkinsData.find(nick);
-        if (it != g_pendingSkinsData.end()) {
-          unsigned char *px = it->second;
-          int w = g_pendingSkinsDims[nick].first;
-          int h = g_pendingSkinsDims[nick].second;
-          uploadSkinTexture(nick, px, w, h);
-          stbi_image_free(px);
-          g_pendingSkinsData.erase(it);
         }
-      }
 
-      if (tex && tex->textures.count(texName) &&
-          tex->textures[texName].glTexId != 0) {
-        a2->skin = texName;
+        if (doCapeCheck) {
+          auto capeBin = downloadCapeData(nick);
+          if (!capeBin.empty()) {
+            mkdirPortable("skin_cache");
+            std::string capeCachePath = "skin_cache/" + nick + "_cape.png";
+            FILE *cwf = fopen(capeCachePath.c_str(), "wb");
+            if (cwf) {
+              fwrite(capeBin.data(), 1, capeBin.size(), cwf);
+              fclose(cwf);
+            }
+
+            int cw, ch, cch;
+            unsigned char *cpx = stbi_load_from_memory(
+                capeBin.data(), (int)capeBin.size(), &cw, &ch, &cch,
+                STBI_rgb_alpha);
+            if (cpx) {
+              std::lock_guard<std::mutex> lock(skinMutex);
+              if (g_pendingCapesData.find(nick) != g_pendingCapesData.end()) {
+                stbi_image_free(g_pendingCapesData[nick]);
+              }
+              g_pendingCapesData[nick] = cpx;
+              g_pendingCapesDims[nick] = {cw, ch};
+            }
+          }
+        }
+      }).detach();
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(skinMutex);
+      auto it = g_pendingSkinsData.find(texName);
+      if (it != g_pendingSkinsData.end()) {
+        unsigned char *px = it->second;
+        int w = g_pendingSkinsDims[texName].first;
+        int h = g_pendingSkinsDims[texName].second;
+        uploadSkinTexture(texName, px, w, h);
+        stbi_image_free(px);
+        g_pendingSkinsData.erase(it);
+      }
+      auto cit = g_pendingCapesData.find(nick);
+      if (cit != g_pendingCapesData.end()) {
+        unsigned char *cpx = cit->second;
+        int cw = g_pendingCapesDims[nick].first;
+        int ch = g_pendingCapesDims[nick].second;
+        uploadCapeTexture(nick, cpx, cw, ch);
+        stbi_image_free(cpx);
+        g_pendingCapesData.erase(cit);
       }
     }
+
+    if (tex && tex->textures.count(texName) &&
+        tex->textures[texName].glTexId != 0) {
+      a2->skin = texName;
+    } else {
+      a2->skin = "mob/char.png";
+    }
+
+    if (tex && tex->textures.count(capeTexName) &&
+        tex->textures[capeTexName].glTexId != 0) {
+      a2->setCapeTexture(capeTexName);
+    }
+  }
+}
+
+void PlayerRenderer::setupPosition(Entity *a2_, float a3, float a4, float a5) {
+  Player *a2 = (Player *)a2_;
+  if (a2) {
+    updateSkin(a2);
   }
 
   float v11, v12;
@@ -399,3 +618,137 @@ void PlayerRenderer::setupRotations(Entity *a2_, float a3, float a4, float a5) {
   }
 }
 int32_t PlayerRenderer::getArmorTransparencyMode() { return 3008; }
+
+void PlayerRenderer::additionalRendering(Mob* a2, float a3) {
+	HumanoidMobRenderer::additionalRendering(a2, a3);
+	if (!a2 || !a2->isPlayer()) return;
+	Player* player = (Player*)a2;
+	if (!Options::instance || !Options::instance->showCape) return;
+	if (player->capeTexture.empty()) return;
+
+	this->bindTexture(player->capeTexture);
+
+	glPushMatrix();
+	this->hmodel->bodyModel.translateTo(0.0625f);
+	glScalef(0.0625f, 0.0625f, 0.0625f);
+	ItemInstance* chestArmor = player->getArmor(1);
+	float zOff = (chestArmor && !chestArmor->isNull()) ? 3.2f : 2.15f;
+	glTranslatef(0.0f, 1.0f, zOff);
+
+	if (player->isSneaking()) {
+		glTranslatef(0.0f, 1.5f, 0.0f);
+	}
+
+	float pt = a3;
+	double capeX = player->xc + (player->xCape - player->xc) * pt;
+	double capeY = player->yc + (player->yCape - player->yc) * pt;
+	double capeZ = player->zc + (player->zCape - player->zc) * pt;
+
+	double px = player->prevPosX + (player->posX - player->prevPosX) * pt;
+	double py = player->prevPosY + (player->posY - player->prevPosY) * pt;
+	double pz = player->prevPosZ + (player->posZ - player->prevPosZ) * pt;
+
+	double dx = capeX - px;
+	double dy = capeY - py;
+	double dz = capeZ - pz;
+
+	float bodyYaw = player->field_128 + Mth::wrapDegrees(player->field_124 - player->field_128) * pt;
+	float rad = bodyYaw * 3.1415926535f / 180.0f;
+	double sinYaw = sinf(rad);
+	double cosYaw = -cosf(rad);
+
+	float forward = (float)(dx * sinYaw + dz * cosYaw) * 100.0f;
+	float sideways = (float)(dx * cosYaw - dz * sinYaw) * 100.0f;
+	if (forward < 0.0f) forward = 0.0f;
+	if (forward > 165.0f) forward = 165.0f;
+	if (sideways < -20.0f) sideways = -20.0f;
+	if (sideways > 20.0f) sideways = 20.0f;
+
+	float lift = (float)dy * 10.0f;
+	if (lift < -6.0f) lift = -6.0f;
+	if (lift > 32.0f) lift = 32.0f;
+
+	float walkSpeed = player->field_168 + (player->field_16C - player->field_168) * pt;
+	if (walkSpeed > 1.0f) walkSpeed = 1.0f;
+	float walkPos = player->field_170 - (1.0f - pt) * player->field_16C;
+	float walk = sinf(walkPos * 0.6662f * 2.0f) * 6.0f * walkSpeed;
+
+	float capeXRot = 6.0f + forward / 2.0f + lift + walk + (player->isSneaking() ? 25.0f : 0.0f);
+	float capeZRot = sideways / 2.0f;
+	if (capeXRot < 0.0f) capeXRot = 0.0f;
+	if (capeXRot > 150.0f) capeXRot = 150.0f;
+	if (capeZRot < -15.0f) capeZRot = -15.0f;
+	if (capeZRot > 15.0f) capeZRot = 15.0f;
+
+	static std::map<int32_t, std::pair<float, float>> s_capeSmooth;
+	auto& smoothState = s_capeSmooth[player->entityId];
+	const float smooth = 0.3f;
+	capeXRot = smoothState.first + (capeXRot - smoothState.first) * smooth;
+	capeZRot = smoothState.second + (capeZRot - smoothState.second) * smooth;
+	smoothState.first = capeXRot;
+	smoothState.second = capeZRot;
+
+	glRotatef(capeXRot, 1.0f, 0.0f, 0.0f);
+	glRotatef(capeZRot, 0.0f, 0.0f, 1.0f);
+
+	GLboolean cullWas = glIsEnabled(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
+
+	Tesselator& t = Tesselator::instance;
+	t.begin(24);
+
+	const float u0 = 1.0f / 64.0f;
+	const float u1 = 11.0f / 64.0f;
+	const float u2 = 12.0f / 64.0f;
+	const float u3 = 22.0f / 64.0f;
+
+	const float uL0 = 0.0f / 64.0f;
+	const float uL1 = 1.0f / 64.0f;
+
+	const float uR0 = 11.0f / 64.0f;
+	const float uR1 = 12.0f / 64.0f;
+
+	const float v0 = 0.0f / 32.0f;
+	const float v1 = 1.0f / 32.0f;
+
+	const float vTop = 1.0f / 32.0f;
+	const float vBottom = 17.0f / 32.0f;
+
+	const float halfW = 5.0f;
+	const float height = 16.0f;
+	const float depth = 1.0f;
+
+	t.vertexUV(-halfW, 0.0f, 0.0f, u2, vTop);
+	t.vertexUV(halfW, 0.0f, 0.0f, u3, vTop);
+	t.vertexUV(halfW, height, 0.0f, u3, vBottom);
+	t.vertexUV(-halfW, height, 0.0f, u2, vBottom);
+
+	t.vertexUV(halfW, 0.0f, depth, u0, vTop);
+	t.vertexUV(-halfW, 0.0f, depth, u1, vTop);
+	t.vertexUV(-halfW, height, depth, u1, vBottom);
+	t.vertexUV(halfW, height, depth, u0, vBottom);
+
+	t.vertexUV(-halfW, 0.0f, depth, uL0, vTop);
+	t.vertexUV(-halfW, 0.0f, 0.0f, uL1, vTop);
+	t.vertexUV(-halfW, height, 0.0f, uL1, vBottom);
+	t.vertexUV(-halfW, height, depth, uL0, vBottom);
+
+	t.vertexUV(halfW, 0.0f, 0.0f, uR0, vTop);
+	t.vertexUV(halfW, 0.0f, depth, uR1, vTop);
+	t.vertexUV(halfW, height, depth, uR1, vBottom);
+	t.vertexUV(halfW, height, 0.0f, uR0, vBottom);
+
+	t.vertexUV(-halfW, 0.0f, depth, u0, v0);
+	t.vertexUV(halfW, 0.0f, depth, u1, v0);
+	t.vertexUV(halfW, 0.0f, 0.0f, u1, v1);
+	t.vertexUV(-halfW, 0.0f, 0.0f, u0, v1);
+
+	t.vertexUV(halfW, height, 0.0f, u2, v0);
+	t.vertexUV(-halfW, height, 0.0f, u3, v0);
+	t.vertexUV(-halfW, height, depth, u3, v1);
+	t.vertexUV(halfW, height, depth, u2, v1);
+
+	t.draw(1);
+	if (cullWas) glEnable(GL_CULL_FACE);
+	glPopMatrix();
+}

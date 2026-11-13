@@ -11,7 +11,7 @@ void SynchedEntityData::assignValues(std::vector<DataItem*>* a2) {
 		if(d != this->data.end()) {
 			switch(ptr->typeId) {
 				case 0:
-					if(d->second->typeId && d->second->typeId == 0) {
+					if(d->second->typeId == 0) {
 						if(((DataItem2<int8_t>*)ptr)->value != ((DataItem2<int8_t>*)d->second)->value) {
 							((DataItem2<int8_t>*)d->second)->value = ((DataItem2<int8_t>*)ptr)->value;
 							d->second->dirty = 1;

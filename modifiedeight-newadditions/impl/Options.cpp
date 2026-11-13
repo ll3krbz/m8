@@ -72,6 +72,8 @@ Options::Option Options::Option::REALISM_SSAO{0, "options.realism.ssao", 54};
 Options::Option Options::Option::REALISM_SCREEN_SPACE_LIGHTING{0, "options.realism.ssl", 55};
 Options::Option Options::Option::REALISM_BLOOM{0, "options.realism.bloom", 56};
 Options::Option Options::Option::EXTENDED_INVENTORY{0, "options.extendedinventory", 57};
+Options::Option Options::Option::SHOW_CAPE{0, "options.showcape", 62};
+Options::Option Options::Option::SKIN_SOURCE{3, "options.skinsource", 63};
 Options::Option Options::Option::FIRST_LAUNCH_ACKNOWLEDGED{0, "options.firstLaunchAcknowledged", 60};
 Options::Option Options::Option::MORNING_FOG{0, "options.morningfog", 58};
 Options::Option Options::Option::SUN_GLOW{0, "options.sunglow", 59};
@@ -82,6 +84,7 @@ std::vector<int32_t> Options::CHAT_BG_COLOR_LEVELS = {0, 1, 2, 3, 4};
 std::vector<int32_t> Options::NEON_COLOR_THEME_LEVELS = {0, 1, 2, 3, 4};
 std::vector<int32_t> Options::NEW_ADDITIONS_LEVELS = {0, 1};
 std::vector<int32_t> Options::PANORAMA_ANGLE_LEVELS = {0, 1, 2, 3, 4, 5, 6};
+std::vector<int32_t> Options::SKIN_SOURCE_LEVELS = {0, 1};
 
 void Options::update() {
 	std::vector<std::string> v13 = this->settingFolderPath.getOptionStrings();
@@ -188,6 +191,10 @@ void Options::update() {
 							this->readBool(v13[i + 1], this->swapJumpAndSneak);
 						} else if(v13[i] == "options.firstLaunchAcknowledged") {
 							this->readBool(v13[i + 1], this->firstLaunchAcknowledged);
+						} else if(v13[i] == "options.showcape") {
+							this->readBool(v13[i + 1], this->showCape);
+						} else if(v13[i] == "options.skinsource") {
+							this->readInt(v13[i + 1], this->skinSource);
 						} else if(v13[i] == "options.extendedinventory") {
 							this->readBool(v13[i + 1], this->extendedInventory);
 						} else if(v13[i] == "options.chatcolor") {
@@ -323,6 +330,8 @@ void Options::toggle(const Options::Option* a2, int32_t a3) {
 		this->fogEnabled ^= 1u;
 	} else if(a2 == &Options::Option::SHOW_FPS) {
 		this->showFps ^= 1u;
+	} else if(a2 == &Options::Option::SHOW_CAPE) {
+		this->showCape ^= 1u;
 	} else if(a2 == &Options::Option::DEBUG_SCREEN) {
 		this->debugScreen ^= 1u;
 	} else if(a2 == &Options::Option::DISCORD_RPC) {
@@ -368,6 +377,8 @@ void Options::toggle(const Options::Option* a2, int32_t a3) {
 		this->extendedInventory ^= 1u;
 	} else if(a2 == &Options::Option::PANORAMA_ANGLE) {
 		this->panoramaAngle = (this->panoramaAngle + a3 + 7) % 7;
+	} else if(a2 == &Options::Option::SKIN_SOURCE) {
+		this->skinSource = (this->skinSource + 1) & 1;
 	} else if(a2 == &Options::Option::LIMIT_FRAMERATE) {
 		this->limitFramerate ^= 1u;
 	} else if(a2 == &Options::Option::DIFFICULTY) {
@@ -407,6 +418,8 @@ void Options::set(const Options::Option* a2, int32_t a3) {
 		this->newAdditions = a3;
 	} else if(a2 == &Options::Option::PANORAMA_ANGLE) {
 		this->panoramaAngle = a3;
+	} else if(a2 == &Options::Option::SKIN_SOURCE) {
+		this->skinSource = a3 & 1;
 	} else if(a2 == &Options::Option::GUI_SCALE) {
 		this->guiScale = a3 & 3;
 	}
@@ -477,6 +490,8 @@ void Options::save(void) {
 	this->addOptionToSaveOutput(v4, "options.marketplace", this->marketplace);
 	this->addOptionToSaveOutput(v4, "options.fogenabled", this->fogEnabled);
 	this->addOptionToSaveOutput(v4, "options.showfps", this->showFps);
+	this->addOptionToSaveOutput(v4, "options.showcape", this->showCape);
+	this->addOptionToSaveOutput(v4, "options.skinsource", this->skinSource);
 	this->addOptionToSaveOutput(v4, "options.debugscreen", this->debugScreen);
 	this->addOptionToSaveOutput(v4, "options.discordrpc", this->discordIntegration);
 	this->addOptionToSaveOutput(v4, "options.chatcolor", this->chatColor);
@@ -579,6 +594,7 @@ void Options::initDefaultValues(void) {
 	this->showFps = 0;
 	this->debugScreen = 0;
 	this->discordIntegration = 1;
+	this->showCape = 1;
 	this->animateTextures = 1;
 	this->animateWater = 1;
 	this->animateLava = 1;
@@ -602,6 +618,7 @@ void Options::initDefaultValues(void) {
 	this->chatColor = 0;
 	this->chatBgColor = 0;
 	this->panoramaAngle = 0;
+	this->skinSource = 0;
 	this->field_F4 = 1.0;
 	this->field_F8 = 1.0;
 	this->fov = 70.0f;
@@ -616,7 +633,7 @@ void Options::initDefaultValues(void) {
 	this->controllerSensitivity = 40.0f;
 	this->controllerCursorSensitivity = 2.25f;
 	this->limitFramerate = 0;
-	this->renderDistance = 2;
+	this->renderDistance = 1;
 	this->useTouchscreen = !this->minecraft->supportNonTouchscreen();
 	float v4 = this->minecraft->platform()->getPixelsPerMillimeter();
 	if(v4 > 12) v4 = 12;
@@ -707,6 +724,9 @@ std::vector<int> Options::getValues(const Options::Option* a2) {
 	}
 	if(a2 == &Options::Option::PANORAMA_ANGLE) {
 		return Options::PANORAMA_ANGLE_LEVELS;
+	}
+	if(a2 == &Options::Option::SKIN_SOURCE) {
+		return Options::SKIN_SOURCE_LEVELS;
 	}
 	if(a2 == &Options::Option::GUI_SCALE) {
 		return {0, 1, 2, 3};
@@ -813,6 +833,9 @@ int32_t Options::getIntValue(const Options::Option* a2) {
 	if(a2 == &Options::Option::GUI_SCALE) {
 		return this->guiScale;
 	}
+	if(a2 == &Options::Option::SKIN_SOURCE) {
+		return this->skinSource;
+	}
 	return 0;
 }
 std::string Options::getDescription(const Options::Option* a2, std::string a4) {
@@ -831,6 +854,10 @@ std::string Options::getDescription(const Options::Option* a2, std::string a4) {
 	if(a2 == &Options::Option::NEW_ADDITIONS) {
 		std::string modes[] = {"Modded", "New Additions"};
 		if(this->newAdditions >= 0 && this->newAdditions <= 1) return a4 + ": " + modes[this->newAdditions];
+	}
+	if(a2 == &Options::Option::SKIN_SOURCE) {
+		std::string modes[] = {"Mojang API", "Local API"};
+		if(this->skinSource >= 0 && this->skinSource <= 1) return a4 + ": " + modes[this->skinSource];
 	}
 	if(a2 == &Options::Option::PANORAMA_ANGLE) {
 		std::string modes[] = {"Off", "0: Forward", "1: Right (90)", "2: Back (180)", "3: Left (270)", "4: Up", "5: Down"};
@@ -927,6 +954,8 @@ bool_t Options::getBooleanValue(const Options::Option* a2) {
 		return this->fogEnabled;
 	} else if(a2 == &Options::Option::SHOW_FPS) {
 		return this->showFps;
+	} else if(a2 == &Options::Option::SHOW_CAPE) {
+		return this->showCape;
 	} else if(a2 == &Options::Option::DEBUG_SCREEN) {
 		return this->debugScreen;
 	} else if(a2 == &Options::Option::DISCORD_RPC) {

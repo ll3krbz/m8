@@ -78,10 +78,14 @@ ServerPlayer* ServerSideNetworkHandler::createNewPlayer(const RakNet::RakNetGUID
 		v7->field_CA8 = a3->clientId;
 		std::stringstream v15;
 		v15 << a3->clientId;
-		v7->field_CA4 = v15.str();
-		this->level->getLevelStorage()->load(v7);
+		v7->field_CA4 = v7->username.empty() ? v15.str() : v7->username;
+		bool loaded = this->level->getLevelStorage()->load(v7);
 		this->minecraft->gameMode->initAbilities(v7->abilities);
 		this->players.emplace_back(v7);
+		if (!loaded) {
+			TilePos spawn = this->level->getSharedSpawnPos();
+			v7->moveTo((float)spawn.x + 0.5f, (float)spawn.y + 1.0f, (float)spawn.z + 0.5f, 0.0f, 0.0f);
+		}
 		while(v7->posY < 129) {
 			v7->setPos(v7->posX, v7->posY, v7->posZ);
 			if(this->level->getCubes(v7, v7->boundingBox, 0)->empty()) break;
@@ -234,6 +238,11 @@ void ServerSideNetworkHandler::sendWorldSeed(Player* a2, const RakNet::RakNetGUI
 	SetTimePacket v23(this->level->getTime(), this->level->levelData.stopTime >> 31);
 	v23.write(&v24);
 	this->rakPeer->Send(&v24, PacketPriority::HIGH_PRIORITY, PacketReliability::RELIABLE_ORDERED, 0, RakNet::AddressOrGUID(a3), 0, 0);
+	v24.Reset();
+	extern int g_morningFogTicks;
+	LevelEventPacket vWeather(9810, (int16_t)this->level->weatherType, (int16_t)(this->level->rainLevel * 1000.0f), (int16_t)g_morningFogTicks, this->level->weatherTicks);
+	vWeather.write(&v24);
+	this->rakPeer->Send(&v24, PacketPriority::HIGH_PRIORITY, PacketReliability::RELIABLE_ORDERED, 0, RakNet::AddressOrGUID(a3), 0, 0);
 }
 
 void ServerSideNetworkHandler::levelGenerated(Level* a2) {
@@ -366,7 +375,15 @@ void ServerSideNetworkHandler::handle(const RakNet::RakNetGUID& a2, struct MoveP
 				player->motionZ = 0.0;
 				player->motionY = 0.0;
 				player->motionX = 0.0;
-				player->lerpTo(a3->x, a3->y, a3->z, a3->yaw, a3->pitch, 3);
+				float dx = player->posX - a3->x;
+				float dy = (player->posY - player->ridingHeight) - a3->y;
+				float dz = player->posZ - a3->z;
+				if(dx * dx + dy * dy + dz * dz > 64.0f) {
+					player->moveTo(a3->x, a3->y, a3->z, a3->yaw, a3->pitch);
+					player->motionX = player->motionY = player->motionZ = 0.0f;
+				} else {
+					player->lerpTo(a3->x, a3->y, a3->z, a3->yaw, a3->pitch, 3);
+				}
 				player->headYaw = a3->bodyYaw;
 				player->checkTileCollisions();
 			}

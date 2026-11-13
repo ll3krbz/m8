@@ -72,6 +72,8 @@ struct Options{
 		static Options::Option REALISM_SCREEN_SPACE_LIGHTING;
 		static Options::Option REALISM_BLOOM;
 		static Options::Option EXTENDED_INVENTORY;
+		static Options::Option SHOW_CAPE;
+		static Options::Option SKIN_SOURCE;
 	static Options::Option FIRST_LAUNCH_ACKNOWLEDGED;
 	};
 
@@ -151,6 +153,7 @@ struct Options{
 	bool_t showFps;
 	bool_t debugScreen;
 	bool_t discordIntegration;
+	bool_t showCape;
 	bool_t lodChunks;
 	bool_t swapJumpAndSneak;
 	bool_t smoothChunks;
@@ -184,10 +187,12 @@ struct Options{
 	static std::vector<int32_t> NEON_COLOR_THEME_LEVELS;
 	static std::vector<int32_t> NEW_ADDITIONS_LEVELS;
 	static std::vector<int32_t> PANORAMA_ANGLE_LEVELS;
+	static std::vector<int32_t> SKIN_SOURCE_LEVELS;
 
 	int32_t chatColor;
 	int32_t chatBgColor;
 	int32_t panoramaAngle;
+	int32_t skinSource;
 
 	void getNeonColors(int32_t&, int32_t&);
 

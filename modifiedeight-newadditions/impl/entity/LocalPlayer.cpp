@@ -287,7 +287,16 @@ void LocalPlayer::move(float a2, float a3, float a4) {
 }
 char_t _D6E065B0 = 0;
 void LocalPlayer::tick() {
+  bool_t wasSneaking = this->getSharedFlag(1);
   Player::tick();
+  bool_t nowSneaking = this->getSharedFlag(1);
+  if (this->level && this->level->isClientMaybe && this->minecraft &&
+      this->minecraft->rakNetInstance && !JavaBridge::isActive() &&
+      !this->isRiding() && nowSneaking != wasSneaking) {
+    PlayerInputPacket pk(this->moveForward, this->moveStrafe, this->isJumping,
+                         nowSneaking);
+    this->minecraft->rakNetInstance->send(pk);
+  }
 
   if (this->isJumping && this->isRiding()) {
     this->ride(0);

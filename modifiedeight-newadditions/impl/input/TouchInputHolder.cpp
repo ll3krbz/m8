@@ -19,15 +19,6 @@ TouchInputHolder::~TouchInputHolder() {
 void TouchInputHolder::onConfigChanged(const Config& a2) {
 	this->moveInput.onConfigChanged(a2);
 	this->turnInput.moveButtonsArea = *this->moveInput.getRectangleArea();
-	for (RectangleArea* rect : {this->moveInput.jumpButton, this->moveInput.sneakButton}) {
-		if (!rect || !rect->field_4) continue;
-		RectangleArea& area = this->turnInput.moveButtonsArea;
-		area.minX = std::min(area.minX, rect->minX);
-		area.minY = std::min(area.minY, rect->minY);
-		area.maxX = std::max(area.maxX, rect->maxX);
-		area.maxY = std::max(area.maxY, rect->maxY);
-		area.field_4 = 1;
-	}
 	this->turnInput.hotbarArea = this->minecraft->gui.getRectangleArea(this->minecraft->options.leftHanded ? 1 : -1);
 	if(!a2.options->useJoypad) {
 		this->turnInput.field_108 = 1.0;
@@ -35,6 +26,10 @@ void TouchInputHolder::onConfigChanged(const Config& a2) {
 		this->turnInput.field_108 = 1.8;
 	}
 	this->turnInput.onConfigChanged(a2);
+	for (RectangleArea* rect : {this->moveInput.jumpButton, this->moveInput.sneakButton}) {
+		if (!rect || !rect->field_4) continue;
+		this->turnInput.allowCameraMovement.excludeAreas.push_back(rect);
+	}
 }
 void TouchInputHolder::render(float z2) {
 	this->turnInput.fill((int32_t)(float)(Gui::InvGuiScale * this->turnInput.field_64.minX), (int32_t)(float)(Gui::InvGuiScale * this->turnInput.field_64.minY), (int32_t)(float)(Gui::InvGuiScale * this->turnInput.field_64.maxX), (int32_t)(float)(Gui::InvGuiScale * this->turnInput.field_64.maxY), 0x40000000);

@@ -71,8 +71,8 @@ void ServerPlayer::setPlayerInput(float a2, float a3, bool_t a4, bool_t a5) {
 			this->moveForward = a3;
 		}
 		this->isJumping = a4;
-		this->setSneaking(a5);
 	}
+	this->setSneaking(a5);
 }
 
 ServerPlayer::~ServerPlayer() {

@@ -997,8 +997,14 @@ void JavaSession::handlePlayPacket(JavaByteBuf* in, int32_t id) {
 	case 0x1C: { // Entity Metadata
 		int32_t eid = in->readVarInt();
 		if(in->failed()) return;
-		int32_t itemId = 0, count = 0, damage = 0;
-		if(!this->readMetadata(in, &itemId, &count, &damage)) return;
+		int32_t itemId = 0, count = 0, damage = 0, flags = -1;
+		if(!this->readMetadata(in, &itemId, &count, &damage, &flags)) return;
+		if(flags >= 0) {
+			Entity* e = this->findEntity(eid);
+			if(e && e->isMob()) {
+				((Mob*)e)->setSneaking((flags & 0x02) != 0);
+			}
+		}
 		if(itemId > 0 && this->pendingItems.count(eid)) {
 			Entity* e = this->findEntity(eid);
 			if(e && e->isItemEntity()) {
@@ -1933,9 +1939,13 @@ void JavaSession::spawnPlayer(JavaByteBuf* in) {
 	if(in->failed() || !this->level || !this->minecraft) {
 		return;
 	}
-	this->readMetadata(in, 0, 0, 0);
+	int32_t flags = -1;
+	this->readMetadata(in, 0, 0, 0, &flags);
 
 	RemotePlayer* p = new RemotePlayer(this->level, this->minecraft->isCreativeMode());
+	if(flags >= 0) {
+		p->setSneaking((flags & 0x02) != 0);
+	}
 	this->minecraft->gameMode->initAbilities(p->abilities);
 	p->moveTo((float)x, (float)JavaY::toM8d(y), (float)z, yaw, pitch);
 	p->headYaw = yaw;
@@ -2191,7 +2201,7 @@ bool_t JavaSession::readSlot(JavaByteBuf* in, int32_t* outId, int32_t* outCount,
  * consumed correctly because more packet fields can follow it.
  */
 bool_t JavaSession::readMetadata(JavaByteBuf* in, int32_t* outItemId, int32_t* outCount,
-                                 int32_t* outDamage) {
+                                 int32_t* outDamage, int32_t* outEntityFlags) {
 	while(1) {
 		int32_t header = in->readByte();
 		if(in->failed()) {
@@ -2203,7 +2213,13 @@ bool_t JavaSession::readMetadata(JavaByteBuf* in, int32_t* outItemId, int32_t* o
 		int32_t type = (header & 0xE0) >> 5;
 		int32_t index = header & 0x1F;
 		switch(type) {
-		case 0: in->skip(1); break;
+		case 0: {
+			int32_t v = in->readByte();
+			if(index == 0 && outEntityFlags) {
+				*outEntityFlags = v;
+			}
+			break;
+		}
 		case 1: in->skip(2); break;
 		case 2: case 3: in->skip(4); break;
 		case 4: in->readString(); break;

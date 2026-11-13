@@ -243,7 +243,7 @@ struct JavaSession {
 	// Consumes a DataWatcher blob. Returns the ItemStack at index 10 when the
 	// blob carries one (that is how a dropped item announces what it is).
 	bool_t readMetadata(JavaByteBuf* in, int32_t* outItemId, int32_t* outCount,
-	                    int32_t* outDamage);
+	                    int32_t* outDamage, int32_t* outEntityFlags = 0);
 	bool_t readSlot(JavaByteBuf* in, int32_t* outId, int32_t* outCount, int32_t* outDamage,
 	                std::vector<uint8_t>* rawOut);
 	void skipNbt(JavaByteBuf* in);

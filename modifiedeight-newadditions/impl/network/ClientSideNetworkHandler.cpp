@@ -245,12 +245,16 @@ void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID& a2, struct Start
 	// An MCPE server speaks 128 tall chunks, so the level has to be one.
 	LevelHeight::set(MCPE_HEIGHT);
 	v8 = new MultiPlayerLevel(levelSource->selectLevel(LevelStorageSource::TempLevelId, 1), "temp", LevelSettings{pk->seed, pk->gamemode != 0}, 1, pk->genver, 0);
+	if(this->timeToSet) {
+		v8->setTime(this->timeToSet);
+	}
 	player = new LocalPlayer(this->minecraft, v8, this->minecraft->user, v8->dimensionPtr->id, pk->gamemode == 1);
 
 	player->rakNetGUID = this->rakPeer->GetMyGUID();
 	player->entityId = pk->eid;
 	player->inventoryMenu.setListener(player);
 	player->moveTo(pk->x, pk->y, pk->z, player->yaw, player->pitch);
+	player->resetPos(1);
 	minecraft = this->minecraft;
 	minecraft->setLevel(v8, "ClientSideNetworkHandler -> setLevel", player);
 	this->minecraft->setIsCreativeMode(pk->gamemode == 1);
@@ -335,6 +339,11 @@ void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID& a2, struct AddMo
 }
 void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID&, struct AddPlayerPacket* pk) {
 	if(this->level) {
+		Entity* existing = this->level->getEntity(pk->eid);
+		if(existing && existing->isPlayer()) {
+			existing->moveTo(pk->x, pk->y, pk->z, pk->yaw, pk->pitch);
+			return;
+		}
 		Player* p = new RemotePlayer(this->level, this->minecraft->isCreativeMode());
 		this->minecraft->gameMode->initAbilities(p->abilities);
 		p->entityId = pk->eid;
@@ -403,8 +412,19 @@ void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID&, struct RotateHe
 void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID&, struct MovePlayerPacket* a3) {
 	if(this->level) {
 		Mob* mob = this->level->getMob(a3->eid);
+		if(!mob && this->minecraft && this->minecraft->player && this->minecraft->player->entityId == a3->eid) {
+			mob = this->minecraft->player;
+		}
 		if(mob) {
-			mob->lerpTo(a3->x, a3->y, a3->z, a3->yaw, a3->pitch, 3);
+			float dx = mob->posX - a3->x;
+			float dy = (mob->posY - mob->ridingHeight) - a3->y;
+			float dz = mob->posZ - a3->z;
+			if(dx * dx + dy * dy + dz * dz > 64.0f) {
+				mob->moveTo(a3->x, a3->y, a3->z, a3->yaw, a3->pitch);
+				mob->motionX = mob->motionY = mob->motionZ = 0.0f;
+			} else {
+				mob->lerpTo(a3->x, a3->y, a3->z, a3->yaw, a3->pitch, 3);
+			}
 			mob->headYaw = a3->bodyYaw;
 		}
 	}

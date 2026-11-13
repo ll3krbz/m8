@@ -9,4 +9,6 @@ struct Snowball: Throwable
 	virtual ~Snowball();
 	virtual int32_t getEntityTypeId() const;
 	virtual void onHit(const HitResult&);
+
+	int32_t damage;
 };

@@ -8,4 +8,5 @@ struct SeagrassTexture : DynamicTexture {
 	SeagrassTexture(const TextureUVCoordinateSet&);
 	virtual ~SeagrassTexture();
 	virtual void tick();
+	static const uint8_t* getStaticFrame0();
 };

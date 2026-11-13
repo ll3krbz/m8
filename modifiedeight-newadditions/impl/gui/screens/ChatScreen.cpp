@@ -9,6 +9,8 @@
 #include <network/RakNetInstance.hpp>
 #include <network/packet/MessagePacket.hpp>
 #include <network/packet/MovePlayerPacket.hpp>
+#include <network/packet/AddPlayerPacket.hpp>
+#include <network/ServerSideNetworkHandler.hpp>
 #include <java/JavaBridge.hpp>
 #include <rendering/Font.hpp>
 #include <util/Util.hpp>
@@ -79,102 +81,41 @@ static inline int parseI(const std::string& s) {
 	return atoi(s.c_str());
 }
 
-static const std::map<std::string, int> nameMap = {
-	{"stone", 1}, {"grass", 2}, {"dirt", 3}, {"cobblestone", 4}, {"planks", 5}, {"wood_planks", 5},
-	{"sapling", 6}, {"bedrock", 7}, {"water", 8}, {"lava", 10}, {"sand", 12}, {"gravel", 13},
-	{"gold_ore", 14}, {"iron_ore", 15}, {"coal_ore", 16}, {"log", 17}, {"wood", 17}, {"leaves", 18},
-	{"sponge", 19}, {"glass", 20}, {"lapis_ore", 21}, {"lapis_block", 22}, {"dispenser", 23},
-	{"sandstone", 24}, {"note_block", 25}, {"noteblock", 25}, {"bed", 355}, {"bed_block", 26},
-	{"golden_rail", 27}, {"powered_rail", 27}, {"detector_rail", 28}, {"sticky_piston", 29},
-	{"web", 30}, {"cobweb", 30}, {"tallgrass", 31}, {"deadbush", 32}, {"piston", 33},
-	{"wool", 35}, {"cloth", 35}, {"dandelion", 37}, {"yellow_flower", 37}, {"poppy", 38},
-	{"rose", 38}, {"red_flower", 38}, {"brown_mushroom", 39}, {"red_mushroom", 40},
-	{"gold_block", 41}, {"iron_block", 42}, {"double_stone_slab", 43}, {"stone_slab", 44},
-	{"brick", 336}, {"brick_block", 45}, {"tnt", 46}, {"bookshelf", 47}, {"mossy_cobblestone", 48},
-	{"obsidian", 49}, {"torch", 50}, {"fire", 51}, {"mob_spawner", 52}, {"spawner", 52},
-	{"oak_stairs", 53}, {"wooden_stairs", 53}, {"chest", 54}, {"redstone_wire", 55},
-	{"diamond_ore", 56}, {"diamond_block", 57}, {"crafting_table", 58}, {"workbench", 58},
-	{"wheat", 296}, {"farmland", 60}, {"furnace", 61}, {"standing_sign", 63}, {"wooden_door", 324},
-	{"ladder", 65}, {"rail", 66}, {"stone_stairs", 67}, {"wall_sign", 68}, {"lever", 69},
-	{"stone_pressure_plate", 70}, {"iron_door", 330}, {"wooden_pressure_plate", 72},
-	{"redstone_ore", 73}, {"redstone_torch", 76}, {"stone_button", 77}, {"snow_layer", 78},
-	{"ice", 79}, {"snow", 80}, {"snow_block", 80}, {"cactus", 81}, {"clay_block", 82},
-	{"reeds", 338}, {"sugar_cane", 338}, {"jukebox", 84}, {"fence", 85}, {"pumpkin", 86},
-	{"netherrack", 87}, {"soul_sand", 88}, {"glowstone", 89}, {"glowstone_ore", 235}, {"lit_pumpkin", 91},
-	{"jack_o_lantern", 91}, {"cake", 354}, {"repeater", 356}, {"stained_glass", 95},
-	{"trapdoor", 96}, {"monster_egg", 97}, {"stonebrick", 98}, {"stone_bricks", 98},
-	{"brown_mushroom_block", 99}, {"red_mushroom_block", 100}, {"huge_mushroom1", 99}, {"huge_mushroom2", 100},
-	{"iron_bars", 101}, {"glass_pane", 102}, {"melon_block", 103}, {"vine", 106},
-	{"fence_gate", 107}, {"brick_stairs", 108}, {"stone_brick_stairs", 109}, {"mycelium", 110},
-	{"lily_pad", 111}, {"nether_brick", 112}, {"nether_brick_fence", 113},
-	{"nether_brick_stairs", 114}, {"nether_wart", 372}, {"enchanting_table", 116},
-	{"brewing_stand", 379}, {"cauldron", 380}, {"end_portal_frame", 120}, {"end_stone", 121},
-	{"dragon_egg", 122}, {"redstone_lamp", 123}, {"dropper", 125}, {"activator_rail", 126},
-	{"cocoa", 127}, {"sandstone_stairs", 128}, {"emerald_ore", 129}, {"ender_chest", 130},
-	{"tripwire_hook", 131}, {"emerald_block", 133}, {"spruce_stairs", 134}, {"birch_stairs", 135},
-	{"jungle_stairs", 136}, {"command_block", 137}, {"beacon", 138}, {"cobblestone_wall", 139},
-	{"flower_pot", 390}, {"wooden_button", 143}, {"skull", 397}, {"anvil", 145},
-	{"trapped_chest", 146}, {"comparator", 404}, {"daylight_detector", 151},
-	{"redstone_block", 152}, {"quartz_ore", 153}, {"hopper", 154}, {"quartz_block", 155},
-	{"quartz_stairs", 156}, {"double_wooden_slab", 157}, {"wooden_slab", 158},
-	{"stained_hardened_clay", 159}, {"terracotta", 159}, {"stained_glass_pane", 160},
-	{"leaves2", 161}, {"log2", 162}, {"acacia_stairs", 163}, {"dark_oak_stairs", 164},
-	{"slime", 165}, {"slime_block", 165}, {"barrier", 166}, {"iron_trapdoor", 167},
-	{"prismarine", 168}, {"sea_lantern", 169}, {"hay_block", 170}, {"carpet", 171},
-	{"hardened_clay", 172}, {"coal_block", 173}, {"packed_ice", 174}, {"double_plant", 175},
-	{"daylight_detector_inverted", 178}, {"red_sandstone", 179}, {"red_sandstone_stairs", 180},
-	{"iron_shovel", 256}, {"iron_pickaxe", 257}, {"iron_axe", 258}, {"flint_and_steel", 259},
-	{"apple", 260}, {"bow", 261}, {"arrow", 262}, {"coal", 263}, {"diamond", 264},
-	{"iron_ingot", 265}, {"gold_ingot", 266}, {"iron_sword", 267}, {"wooden_sword", 268},
-	{"wooden_shovel", 269}, {"wooden_pickaxe", 270}, {"wooden_axe", 271}, {"stone_sword", 272},
-	{"stone_shovel", 273}, {"stone_pickaxe", 274}, {"stone_axe", 275}, {"diamond_sword", 276},
-	{"diamond_shovel", 277}, {"diamond_pickaxe", 278}, {"diamond_axe", 279}, {"stick", 280},
-	{"bowl", 281}, {"mushroom_stew", 282}, {"golden_sword", 283}, {"golden_shovel", 284},
-	{"golden_pickaxe", 285}, {"golden_axe", 286}, {"string", 287}, {"feather", 288},
-	{"gunpowder", 289}, {"wooden_hoe", 290}, {"stone_hoe", 291}, {"iron_hoe", 292},
-	{"diamond_hoe", 293}, {"golden_hoe", 294}, {"wheat_seeds", 295}, {"seeds", 295},
-	{"bread", 297}, {"leather_helmet", 298}, {"leather_chestplate", 299},
-	{"leather_leggings", 300}, {"leather_boots", 301}, {"chainmail_helmet", 302},
-	{"chainmail_chestplate", 303}, {"chainmail_leggings", 304}, {"chainmail_boots", 305},
-	{"iron_helmet", 306}, {"iron_chestplate", 307}, {"iron_leggings", 308},
-	{"iron_boots", 309}, {"diamond_helmet", 310}, {"diamond_chestplate", 311},
-	{"diamond_leggings", 312}, {"diamond_boots", 313}, {"golden_helmet", 314},
-	{"golden_chestplate", 315}, {"golden_leggings", 316}, {"golden_boots", 317},
-	{"flint", 318}, {"porkchop", 319}, {"cooked_porkchop", 320}, {"painting", 321},
-	{"golden_apple", 322}, {"sign", 323}, {"water_bucket", 326}, {"lava_bucket", 327},
-	{"minecart", 328}, {"saddle", 329}, {"redstone", 331}, {"snowball", 332},
-	{"boat", 333}, {"leather", 334}, {"milk_bucket", 335}, {"clay_ball", 337},
-	{"paper", 339}, {"book", 340}, {"slime_ball", 341}, {"chest_minecart", 342},
-	{"furnace_minecart", 343}, {"egg", 344}, {"compass", 345}, {"fishing_rod", 346},
-	{"clock", 347}, {"glowstone_dust", 348}, {"fish", 349}, {"cooked_fish", 350},
-	{"dye", 351}, {"bone", 352}, {"sugar", 353}, {"cookie", 357}, {"map", 358},
-	{"shears", 359}, {"melon", 360}, {"pumpkin_seeds", 361}, {"melon_seeds", 362},
-	{"beef", 363}, {"cooked_beef", 364}, {"chicken", 365}, {"cooked_chicken", 366},
-	{"rotten_flesh", 367}, {"ender_pearl", 368}, {"blaze_rod", 369}, {"ghast_tear", 370},
-	{"gold_nugget", 371}, {"potion", 373}, {"glass_bottle", 374}, {"spider_eye", 375},
-	{"fermented_spider_eye", 376}, {"blaze_powder", 377}, {"magma_cream", 378},
-	{"eye_of_ender", 381}, {"speckled_melon", 382}, {"glistering_melon", 382},
-	{"spawn_egg", 383}, {"experience_bottle", 384}, {"fireball", 385},
-	{"fire_charge", 385}, {"writable_book", 386}, {"written_book", 387},
-	{"emerald", 388}, {"item_frame", 389}, {"carrot", 391}, {"potato", 392},
-	{"baked_potato", 393}, {"poisonous_potato", 394}, {"empty_map", 395},
-	{"golden_carrot", 396}, {"carrot_on_a_stick", 398}, {"nether_star", 399},
-	{"pumpkin_pie", 400}, {"fireworks", 401}, {"firework_charge", 402},
-	{"enchanted_book", 403}, {"netherbrick", 405}, {"quartz", 406}, {"tnt_minecart", 407},
-	{"hopper_minecart", 408}, {"prismarine_shard", 409}, {"prismarine_crystals", 410},
-	{"rabbit", 411}, {"cooked_rabbit", 412}, {"rabbit_stew", 413}, {"rabbit_foot", 414},
-	{"rabbit_hide", 415}, {"armor_stand", 416}, {"iron_horse_armor", 417},
-	{"golden_horse_armor", 418}, {"diamond_horse_armor", 419}, {"lead", 420},
-	{"name_tag", 421}, {"mutton", 423}, {"cooked_mutton", 424}
-};
+static std::string normalizeItemQuery(const std::string& raw) {
+	std::string s = raw;
+	for (auto& c : s) c = tolower(c);
+	if (s.rfind("minecraft:", 0) == 0) s = s.substr(10);
+	if (s.rfind("tile.", 0) == 0) s = s.substr(5);
+	if (s.rfind("item.", 0) == 0) s = s.substr(5);
+	if (s.size() > 5 && s.rfind(".name") == s.size() - 5) s = s.substr(0, s.size() - 5);
+	std::string clean;
+	for (char c : s) {
+		if (isalnum(c)) clean += c;
+	}
+	return clean;
+}
+
+static void getItemCandidates(int id, std::string& outDesc, std::string& outLocalized, std::string& outDisplay) {
+	outDesc.clear();
+	outLocalized.clear();
+	outDisplay.clear();
+	if (id >= 0 && id < 256 && Tile::tiles[id]) {
+		outDesc = Tile::tiles[id]->getDescriptionId();
+	}
+	if (id >= 0 && id < 512 && Item::items[id]) {
+		if (outDesc.empty()) outDesc = Item::items[id]->getDescriptionId();
+		ItemInstance inst(id, 1, 0);
+		outLocalized = Item::items[id]->getName(&inst);
+		outDisplay = outLocalized;
+	}
+	if (outDisplay.empty()) outDisplay = outDesc;
+}
 
 static bool resolveItem(const std::string& rawName, int& outId, std::string& outName) {
 	if (rawName.empty()) return false;
 	std::string name = rawName;
 	for (auto& c : name) c = tolower(c);
 	if (name.rfind("minecraft:", 0) == 0) name = name.substr(10);
-	if (name.rfind("tile.", 0) == 0) name = name.substr(5);
-	if (name.rfind("item.", 0) == 0) name = name.substr(5);
 
 	bool isNum = true;
 	for (char c : name) {
@@ -182,55 +123,61 @@ static bool resolveItem(const std::string& rawName, int& outId, std::string& out
 	}
 	if (isNum) {
 		int id = atoi(name.c_str());
-		if (id > 0 && ((id < 256 && Tile::tiles[id]) || (id < 512 && Item::items[id]))) {
-			outId = id;
-			if (id < 256 && Tile::tiles[id]) outName = Tile::tiles[id]->getDescriptionId();
-			else if (id < 512 && Item::items[id]) outName = Item::items[id]->getDescriptionId();
-			else outName = "item_" + toStr(id);
-			return true;
-		}
 		if (id > 0) {
+			std::string desc, loc, disp;
+			getItemCandidates(id, desc, loc, disp);
 			outId = id;
-			outName = "item_" + toStr(id);
+			outName = disp.empty() ? ("item_" + toStr(id)) : disp;
 			return true;
 		}
 	}
 
-	auto it = nameMap.find(name);
-	if (it != nameMap.end()) {
-		outId = it->second;
-		outName = it->first;
+	std::string cleanName = normalizeItemQuery(rawName);
+	if (cleanName.empty()) return false;
+
+	int bestPartialId = -1;
+	size_t bestPartialLen = (size_t)-1;
+	std::string bestPartialName;
+
+	for (int pass = 0; pass < 2; ++pass) {
+		int startId = (pass == 0) ? 256 : 1;
+		int endId = (pass == 0) ? 512 : 256;
+		for (int i = startId; i < endId; ++i) {
+			if (i < 256 && !Tile::tiles[i] && !Item::items[i]) continue;
+			if (i >= 256 && !Item::items[i]) continue;
+
+			std::string desc, loc, disp;
+			getItemCandidates(i, desc, loc, disp);
+			std::string cDesc = normalizeItemQuery(desc);
+			std::string cLoc = normalizeItemQuery(loc);
+
+			if ((!cDesc.empty() && cDesc == cleanName) || (!cLoc.empty() && cLoc == cleanName)) {
+				outId = i;
+				outName = disp.empty() ? ("item_" + toStr(i)) : disp;
+				return true;
+			}
+
+			if (!cDesc.empty() && cDesc.find(cleanName) != std::string::npos) {
+				if (cDesc.size() < bestPartialLen) {
+					bestPartialLen = cDesc.size();
+					bestPartialId = i;
+					bestPartialName = disp.empty() ? ("item_" + toStr(i)) : disp;
+				}
+			}
+			if (!cLoc.empty() && cLoc.find(cleanName) != std::string::npos) {
+				if (cLoc.size() < bestPartialLen) {
+					bestPartialLen = cLoc.size();
+					bestPartialId = i;
+					bestPartialName = disp.empty() ? ("item_" + toStr(i)) : disp;
+				}
+			}
+		}
+	}
+
+	if (bestPartialId > 0) {
+		outId = bestPartialId;
+		outName = bestPartialName;
 		return true;
-	}
-
-	std::string cleanName;
-	for (char c : name) {
-		if (isalnum(c)) cleanName += (char)tolower(c);
-	}
-
-	for (int i = 1; i < 512; ++i) {
-		if (i < 256 && Tile::tiles[i]) {
-			std::string d = Tile::tiles[i]->getDescriptionId();
-			std::string cd;
-			for (char c : d) if (isalnum(c)) cd += (char)tolower(c);
-			if (cd.rfind("tile", 0) == 0) cd = cd.substr(4);
-			if (cd == cleanName || cd.find(cleanName) != std::string::npos) {
-				outId = i;
-				outName = Tile::tiles[i]->getDescriptionId();
-				return true;
-			}
-		}
-		if (Item::items[i]) {
-			std::string d = Item::items[i]->getDescriptionId();
-			std::string cd;
-			for (char c : d) if (isalnum(c)) cd += (char)tolower(c);
-			if (cd.rfind("item", 0) == 0) cd = cd.substr(4);
-			if (cd == cleanName || cd.find(cleanName) != std::string::npos) {
-				outId = i;
-				outName = Item::items[i]->getDescriptionId();
-				return true;
-			}
-		}
 	}
 
 	return false;
@@ -288,11 +235,32 @@ static bool executeCommand(Minecraft* mc, const std::string& line) {
 
 		auto teleportPlayer = [&](Player* p, float x, float y, float z) {
 			if (!p) return;
-			p->setPos(x, y, z);
-			p->resetPos(1);
+			p->moveTo(x, y - p->ridingHeight, z, p->yaw, p->pitch);
+			p->motionX = 0.0f;
+			p->motionY = 0.0f;
+			p->motionZ = 0.0f;
 			if (mc->rakNetInstance) {
-				MovePlayerPacket pk(p->entityId, x, y, z, p->pitch, p->yaw, p->headYaw);
+				MovePlayerPacket pk(p->entityId, x, y - p->ridingHeight, z, p->pitch, p->yaw, p->headYaw);
 				mc->rakNetInstance->send(pk);
+			}
+			if (mc->rakNetInstance && mc->rakNetInstance->isServer() && mc->level) {
+				RakNet::RakPeer* peer = mc->rakNetInstance->getPeer();
+				if (peer) {
+					for (auto* other : mc->level->playersMaybe) {
+						if (other && other != p) {
+							if (other != mc->player && other->rakNetGUID.g != 0) {
+								RakNet::BitStream stream;
+								AddPlayerPacket(p).write(&stream);
+								peer->Send(&stream, PacketPriority::HIGH_PRIORITY, PacketReliability::RELIABLE_ORDERED, 0, RakNet::AddressOrGUID(other->rakNetGUID), 0, 0);
+							}
+							if (p != mc->player && p->rakNetGUID.g != 0) {
+								RakNet::BitStream stream;
+								AddPlayerPacket(other).write(&stream);
+								peer->Send(&stream, PacketPriority::HIGH_PRIORITY, PacketReliability::RELIABLE_ORDERED, 0, RakNet::AddressOrGUID(p->rakNetGUID), 0, 0);
+							}
+						}
+					}
+				}
 			}
 		};
 
@@ -357,8 +325,10 @@ static bool executeCommand(Minecraft* mc, const std::string& line) {
 	}
 
 	if (cmd == "locate") {
-		if (args.empty()) {
-			mc->gui.addMessage("", "Usage: /locate <biome|village|temple> [radius]", 200);
+		if (args.empty() || args[0] == "list" || args[0] == "help") {
+			mc->gui.addMessage("", "Structures: village, temple, swamp_hut, igloo", 200);
+			mc->gui.addMessage("", "Biomes: plains, desert, jungle, taiga, forest, birch_forest, swamp, mountains, tundra, savanna, shrubland, mushroom", 200);
+			mc->gui.addMessage("", "Usage: /locate <structure|biome> [radius]", 200);
 			return true;
 		}
 		std::string targetName = args[0];
@@ -487,6 +457,112 @@ static bool executeCommand(Minecraft* mc, const std::string& line) {
 			return true;
 		}
 
+		if (targetName == "swamp_hut" || targetName == "swamphut" || targetName == "witch_hut" || targetName == "witchhut") {
+			int curChunkX = (int)floorf((float)px / 16.0f);
+			int curChunkZ = (int)floorf((float)pz / 16.0f);
+			int curGX = (int)floorf((float)curChunkX / 32.0f);
+			int curGZ = (int)floorf((float)curChunkZ / 32.0f);
+			int maxG = (maxRadius / 512) + 1;
+			int bestDistSq = 999999999;
+			int foundX = 0, foundZ = 0;
+			bool found = false;
+
+			for (int gr = 0; gr <= maxG; ++gr) {
+				for (int dgx = -gr; dgx <= gr; ++dgx) {
+					for (int dgz = -gr; dgz <= gr; ++dgz) {
+						if (abs(dgx) == gr || abs(dgz) == gr) {
+							int gx = curGX + dgx;
+							int gz = curGZ + dgz;
+							uint64_t hSeed = ((uint64_t)gx * 341873128712ULL + (uint64_t)gz * 132897987541ULL) ^ (uint64_t)mc->level->getSeed() ^ 14357620ULL;
+							Random hRand(hSeed);
+							int targetChunkX = gx * 32 + (hRand.genrand_int32() % 24);
+							int targetChunkZ = gz * 32 + (hRand.genrand_int32() % 24);
+							int hx = targetChunkX * 16 + 4;
+							int hz = targetChunkZ * 16 + 4;
+							Biome* b = bs->getBiome(hx + 8, hz + 8);
+							if (b == Biome::swampland) {
+								int dx = hx - px;
+								int dz = hz - pz;
+								int distSq = dx * dx + dz * dz;
+								if (distSq <= maxRadius * maxRadius && distSq < bestDistSq) {
+									bestDistSq = distSq;
+									foundX = hx;
+									foundZ = hz;
+									found = true;
+								}
+							}
+						}
+					}
+				}
+				if (found) break;
+			}
+
+			if (found) {
+				int dist = (int)sqrtf((float)bestDistSq);
+				int foundY = mc->level->getHeightmap(foundX + 3, foundZ + 4);
+				if (foundY <= 0) foundY = 64;
+				else foundY += 1;
+				mc->gui.addMessage("", "Located Swamp Hut at X: " + toStr(foundX) + ", Y: " + toStr(foundY) + ", Z: " + toStr(foundZ) + " (" + toStr(dist) + " blocks away)", 200);
+			} else {
+				mc->gui.addMessage("", "Swamp Hut not found within " + toStr(maxRadius) + " blocks", 200);
+			}
+			return true;
+		}
+
+		if (targetName == "igloo") {
+			int curChunkX = (int)floorf((float)px / 16.0f);
+			int curChunkZ = (int)floorf((float)pz / 16.0f);
+			int curGX = (int)floorf((float)curChunkX / 32.0f);
+			int curGZ = (int)floorf((float)curChunkZ / 32.0f);
+			int maxG = (maxRadius / 512) + 1;
+			int bestDistSq = 999999999;
+			int foundX = 0, foundZ = 0;
+			bool found = false;
+
+			for (int gr = 0; gr <= maxG; ++gr) {
+				for (int dgx = -gr; dgx <= gr; ++dgx) {
+					for (int dgz = -gr; dgz <= gr; ++dgz) {
+						if (abs(dgx) == gr || abs(dgz) == gr) {
+							int gx = curGX + dgx;
+							int gz = curGZ + dgz;
+							uint64_t iSeed = ((uint64_t)gx * 341873128712ULL + (uint64_t)gz * 132897987541ULL) ^ (uint64_t)mc->level->getSeed() ^ 14357618ULL;
+							Random iRand(iSeed);
+							int targetChunkX = gx * 32 + (iRand.genrand_int32() % 24);
+							int targetChunkZ = gz * 32 + (iRand.genrand_int32() % 24);
+							int ix = targetChunkX * 16 + 4;
+							int iz = targetChunkZ * 16 + 4;
+							Biome* b = bs->getBiome(ix + 8, iz + 8);
+							if (b == Biome::tundra || b == Biome::icePeaks || b == Biome::taiga) {
+								int dx = ix - px;
+								int dz = iz - pz;
+								int distSq = dx * dx + dz * dz;
+								if (distSq <= maxRadius * maxRadius && distSq < bestDistSq) {
+									bestDistSq = distSq;
+									foundX = ix;
+									foundZ = iz;
+									found = true;
+								}
+							}
+						}
+					}
+				}
+				if (found) break;
+			}
+
+			if (found) {
+				int dist = (int)sqrtf((float)bestDistSq);
+				int foundY = mc->level->getHeightmap(foundX + 3, foundZ + 3);
+				if (foundY <= 0) foundY = 64;
+				else foundY += 1;
+				mc->gui.addMessage("", "Located Igloo at X: " + toStr(foundX) + ", Y: " + toStr(foundY) + ", Z: " + toStr(foundZ) + " (" + toStr(dist) + " blocks away)", 200);
+			} else {
+				mc->gui.addMessage("", "Igloo not found within " + toStr(maxRadius) + " blocks", 200);
+			}
+			return true;
+		}
+
+		/* mineshaft locate removed */
+
 		Biome* target1 = nullptr;
 		Biome* target2 = nullptr;
 
@@ -517,7 +593,9 @@ static bool executeCommand(Minecraft* mc, const std::string& line) {
 		} else if (targetName == "mushroom" || targetName == "mushroom_island" || targetName == "mushroom_fields") {
 			target1 = Biome::mushroom;
 		} else {
-			mc->gui.addMessage("", "Unknown target: " + args[0] + " (use village, temple, or biome name)", 200);
+			mc->gui.addMessage("", "Unknown target: " + args[0], 200);
+			mc->gui.addMessage("", "Structures: village, temple, swamp_hut, igloo", 200);
+			mc->gui.addMessage("", "Biomes: plains, desert, jungle, taiga, forest, birch_forest, swamp, mountains, tundra, savanna, shrubland, mushroom", 200);
 			return true;
 		}
 
@@ -688,12 +766,6 @@ static bool executeCommand(Minecraft* mc, const std::string& line) {
 				if (Tile::tiles[i]) {
 					std::string n = Tile::tiles[i]->getDescriptionId();
 					if (n.rfind("tile.", 0) == 0) n = n.substr(5);
-					for (const auto& kv : nameMap) {
-						if (kv.second == i) {
-							n = kv.first;
-							break;
-						}
-					}
 					allEntries.emplace_back(i, n);
 				}
 			}
@@ -701,12 +773,6 @@ static bool executeCommand(Minecraft* mc, const std::string& line) {
 				if (Item::items[i]) {
 					std::string n = Item::items[i]->getDescriptionId();
 					if (n.rfind("item.", 0) == 0) n = n.substr(5);
-					for (const auto& kv : nameMap) {
-						if (kv.second == i) {
-							n = kv.first;
-							break;
-						}
-					}
 					allEntries.emplace_back(i, n);
 				}
 			}
@@ -812,7 +878,12 @@ static bool executeCommand(Minecraft* mc, const std::string& line) {
 		return true;
 	}
 
-	mc->gui.addMessage("", "Unknown command: /" + cmd + ". Available: /give, /tp, /locate, /time, /list", 200);
+	if (cmd == "seed") {
+		mc->gui.addMessage("", "Seed: " + toStr((long long)mc->level->getSeed()), 200);
+		return true;
+	}
+
+	mc->gui.addMessage("", "Unknown command: /" + cmd + ". Available: /give, /tp, /locate, /time, /list, /seed", 200);
 	return true;
 }
 

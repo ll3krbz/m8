@@ -3,7 +3,16 @@
 #include <tile/Tile.hpp>
 #include <rendering/Textures.hpp>
 #include <rendering/Tesselator.hpp>
+#include <ctime>
 #include <unigl.h>
+
+static bool isWinterSeason() {
+	time_t now = time(nullptr);
+	struct tm* lt = localtime(&now);
+	if (!lt) return false;
+	int m = lt->tm_mon;
+	return (m == 11 || m == 0 || m == 1);
+}
 
 ChestRenderer::ChestRenderer() : TileEntityRenderer(), field_8(0), field_1A8(1){
 
@@ -71,7 +80,7 @@ void ChestRenderer::render(struct TileEntity* tee, float x, float y, float z, fl
 		glTranslatef(v16, v17, v18);
 		if(te->pair) {
 			v19 = &this->field_1A8;
-			this->bindTexture("item/chest/double_normal.png");
+			this->bindTexture(isWinterSeason() ? "item/chest/double_christmas.png" : "item/chest/double_normal.png");
 			if(level == 2 || level == 5) {
 				v20 = -1.0;
 			} else {
@@ -82,9 +91,9 @@ void ChestRenderer::render(struct TileEntity* tee, float x, float y, float z, fl
 		} else {
 			v19 = &this->field_8;
 			if (te->type == 6 || (te->level && te->getTile() && Tile::enderChest && te->getTile() == Tile::enderChest)) {
-				this->bindTexture("item/chest/ender.png");
+				this->bindTexture(isWinterSeason() ? "item/chest/ender_christmas.png" : "item/chest/ender.png");
 			} else {
-				this->bindTexture("item/chest/normal.png");
+				this->bindTexture(isWinterSeason() ? "item/chest/christmas.png" : "item/chest/normal.png");
 			}
 		}
 		v22 = 1.0 - (float)(te->field_88 + (float)((float)(te->field_84 - te->field_88) * a6));
@@ -96,7 +105,12 @@ void ChestRenderer::render(struct TileEntity* tee, float x, float y, float z, fl
 
 void ChestRenderer::renderGuiChest(Textures* textures, bool isEnder, float x, float y, float scale, float alpha) {
 	if (!textures) return;
-	textures->loadAndBindTexture(isEnder ? "item/chest/ender.png" : "item/chest/normal.png");
+	bool winter = isWinterSeason();
+	if (isEnder) {
+		textures->loadAndBindTexture(winter ? "item/chest/ender_christmas.png" : "item/chest/ender.png");
+	} else {
+		textures->loadAndBindTexture(winter ? "item/chest/christmas.png" : "item/chest/normal.png");
+	}
 
 	GLboolean blendWas = glIsEnabled(GL_BLEND);
 	GLboolean alphaTestWas = glIsEnabled(GL_ALPHA_TEST);

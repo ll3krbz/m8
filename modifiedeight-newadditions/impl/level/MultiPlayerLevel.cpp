@@ -1,5 +1,8 @@
 #include <level/MultiPlayerLevel.hpp>
 #include <entity/Entity.hpp>
+#include <entity/Player.hpp>
+#include <level/biome/Biome.hpp>
+#include <math/Mth.hpp>
 #include <algorithm>
 MultiPlayerLevel::MultiPlayerLevel(LevelStorage* a2, const std::string& a3, const LevelSettings& a4, bool a5,int a6,Dimension * a7) : Level(a2, a3, a4, a5, a6, a7){
 
@@ -35,6 +38,35 @@ void MultiPlayerLevel::tick() {
 			this->setTime(this->getTime() + 1);
 		}
 		this->updateSkyDarken();
+		this->gameTickCounter++;
+		if (this->weatherType != 0) {
+			if (this->rainLevel < 1.0f) this->rainLevel += 0.003f;
+			if (this->rainLevel > 1.0f) this->rainLevel = 1.0f;
+		} else {
+			if (this->rainLevel > 0.0f) {
+				this->rainLevel -= 0.003f;
+				if (this->rainLevel < 0.0f) this->rainLevel = 0.0f;
+			}
+		}
+		if (this->rainLevel > 0.35f) {
+			if (this->gameTickCounter % 10 == 0 && !this->playersMaybe.empty() && this->playersMaybe[0]) {
+				Player* p = this->playersMaybe[0];
+				Biome* b = this->getBiome(Mth::floor(p->posX), Mth::floor(p->posZ));
+				bool isSnowy = (b == Biome::taiga || b == Biome::tundra || b == Biome::icePeaks || b == Biome::iceDesert);
+				if (!isSnowy) {
+					float dropAlpha = (this->rainLevel - 0.35f) / 0.65f;
+					this->playSound(p->posX, p->posY, p->posZ, "ambient.weather.rain", dropAlpha * 0.7f, 1.0f);
+				}
+			}
+			if (this->weatherType == 2 && this->gameTickCounter % 120 == 0 && (this->random.genrand_int32() % 2 == 0)) {
+				if (!this->playersMaybe.empty() && this->playersMaybe[0]) {
+					Player* p = this->playersMaybe[0];
+					float ox = (this->random.nextFloat() * 80.0f - 40.0f);
+					float oz = (this->random.nextFloat() * 80.0f - 40.0f);
+					this->playSound(p->posX + ox, p->posY, p->posZ + oz, "ambient.weather.thunder", 1.0f, 0.9f + this->random.nextFloat() * 0.2f);
+				}
+			}
+		}
 		int32_t v3 = 10;
 		do {
 			//TODO check

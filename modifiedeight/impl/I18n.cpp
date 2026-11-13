@@ -93,6 +93,8 @@ bool_t I18n::get(const std::string& a1, std::string& a2) {
 	if (a1 == "options.animatefire") { a2 = "Animated Fire"; return 1; }
 	if (a1 == "options.smoothchunks") { a2 = "Smooth Chunk Loading"; return 1; }
 	if (a1 == "options.smoothchunks.desc") { a2 = "Smooths chunk rebuilds to eliminate frame drops"; return 1; }
+	if (a1 == "options.showcape") { a2 = "Show Cape"; return 1; }
+	if (a1 == "options.skinsource") { a2 = "Skin Source"; return 1; }
 	if (a1 == "options.controllersensitivity") { a2 = "Controller Sensitivity"; return 1; }
 	if (a1 == "options.controllercursorsensitivity") { a2 = "Controller Cursor Sensitivity"; return 1; }
 	if (a1 == "options.controllerlayout") { a2 = "Controller Layout"; return 1; }

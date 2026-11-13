@@ -58,6 +58,8 @@
 #include <rendering/model/FrogModel.hpp>
 #include <rendering/entity/OcelotRenderer.hpp>
 #include <rendering/entity/BoatRenderer.hpp>
+#include <rendering/entity/SnowGolemRenderer.hpp>
+#include <rendering/model/SnowGolemModel.hpp>
 
 EntityRenderDispatcher* EntityRenderDispatcher::instance = 0;
 float EntityRenderDispatcher::xOff = 0, EntityRenderDispatcher::yOff = 0, EntityRenderDispatcher::zOff = 0;
@@ -100,6 +102,7 @@ EntityRenderDispatcher::EntityRenderDispatcher() {
 	this->assign(FROG, new FrogRenderer(new FrogModel(), 0.3f));
 	this->assign(OCELOT, new OcelotRenderer(new OcelotModel(), 0.4f));
 	this->assign(BOAT, new BoatRenderer());
+	this->assign(SNOW_GOLEM, new SnowGolemRenderer(new SnowGolemModel(), 0.5f));
 	for(auto&& p: this->renderers) {
 		if (p) p->init(this);
 	}

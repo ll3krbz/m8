@@ -1692,6 +1692,7 @@ void Level::removeTileEntity(int32_t x, int32_t y, int32_t z) {
 void Level::saveGame() {
 	if(this->levelStoragePtr) {
 		this->levelStoragePtr->saveGame(this);
+		this->savePlayers();
 		this->saveLevelData();
 	}
 }

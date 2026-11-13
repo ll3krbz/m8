@@ -202,11 +202,21 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener, 
     }
 
     public void setupKeyboardViews(String text, int maxLength, boolean limitInput) {
+        if (this.mHiddenTextInputDialog != null && this.mHiddenTextInputDialog.isShowing()) {
+            this.mHiddenTextInputDialog.dismiss();
+        }
         this.textInputWidget = new TextInputProxyEditTextbox(this, maxLength, limitInput);
         this.textInputWidget.setFocusable(true);
         this.textInputWidget.setFocusableInTouchMode(true);
         this.textInputWidget.setInputType(131072);
         this.textInputWidget.setImeOptions(268435461);
+        this.textInputWidget.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        this.textInputWidget.setTextColor(android.graphics.Color.TRANSPARENT);
+        this.textInputWidget.setHintTextColor(android.graphics.Color.TRANSPARENT);
+        this.textInputWidget.setHighlightColor(android.graphics.Color.TRANSPARENT);
+        this.textInputWidget.setCursorVisible(false);
+        this.textInputWidget.setAlpha(0.0f);
+        this.textInputWidget.setPadding(0, 0, 0, 0);
         this.textInputWidget.setText(text);
         this.textInputWidget.setOnEditorActionListener(new TextView.OnEditorActionListener() { // from class: com.mojang.minecraftpe.MainActivity.1
             @Override // android.widget.TextView.OnEditorActionListener
@@ -256,22 +266,22 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener, 
         });
         this.mHiddenTextInputDialog = new PopupWindow(this);
         this.mHiddenTextInputDialog.setInputMethodMode(1);
-        this.mHiddenTextInputDialog.setWidth(320);
-        this.mHiddenTextInputDialog.setHeight(50);
-        this.mHiddenTextInputDialog.setWindowLayoutMode(-2, -2);
+        this.mHiddenTextInputDialog.setWidth(1);
+        this.mHiddenTextInputDialog.setHeight(1);
+        this.mHiddenTextInputDialog.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         this.mHiddenTextInputDialog.setClippingEnabled(false);
         LinearLayout layout = new LinearLayout(this);
-        View mainLayout = new LinearLayout(this);
-        layout.setPadding(-5, -5, -5, -5);
-        ViewGroup.MarginLayoutParams params = new ViewGroup.MarginLayoutParams(-2, -2);
+        layout.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        layout.setPadding(0, 0, 0, 0);
+        ViewGroup.MarginLayoutParams params = new ViewGroup.MarginLayoutParams(1, 1);
         params.setMargins(0, 0, 0, 0);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.addView(this.textInputWidget, params);
         this.mHiddenTextInputDialog.setContentView(layout);
-        setContentView(mainLayout, params);
+        View mainLayout = getWindow().getDecorView();
         this.mHiddenTextInputDialog.setOutsideTouchable(true);
-        this.mHiddenTextInputDialog.setTouchInterceptor(new View.OnTouchListener() { // from class: com.mojang.minecraftpe.MainActivity.4
-            @Override // android.view.View.OnTouchListener
+        this.mHiddenTextInputDialog.setTouchInterceptor(new View.OnTouchListener() {
+            @Override
             public boolean onTouch(View v, MotionEvent event) {
                 MainActivity.this.nativeBackPressed();
                 return false;
@@ -280,20 +290,21 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener, 
         this.mHiddenTextInputDialog.showAtLocation(mainLayout, 0, -50000, 0);
         this.mHiddenTextInputDialog.setFocusable(true);
         this.mHiddenTextInputDialog.update();
-        this.mHiddenTextInputDialog.dismiss();
-        this.mHiddenTextInputDialog.showAtLocation(mainLayout, 0, -50000, 0);
-        this.mHiddenTextInputDialog.setFocusable(true);
-        this.mHiddenTextInputDialog.update();
-        this.textInputWidget.postDelayed(new Runnable() { // from class: com.mojang.minecraftpe.MainActivity.5
-            @Override // java.lang.Runnable
+        final TextInputProxyEditTextbox widget = this.textInputWidget;
+        this.textInputWidget.postDelayed(new Runnable() {
+            @Override
             public void run() {
+                if (widget == null || MainActivity.this.textInputWidget != widget) {
+                    return;
+                }
+                widget.requestFocus();
                 MotionEvent event = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), 0, 0.0f, 0.0f, 0);
-                MainActivity.this.textInputWidget.dispatchTouchEvent(event);
+                widget.dispatchTouchEvent(event);
                 event.recycle();
                 MotionEvent event2 = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), 1, 0.0f, 0.0f, 0);
-                MainActivity.this.textInputWidget.dispatchTouchEvent(event2);
+                widget.dispatchTouchEvent(event2);
                 event2.recycle();
-                MainActivity.this.textInputWidget.setSelection(MainActivity.this.textInputWidget.length());
+                widget.setSelection(widget.length());
             }
         }, 200L);
     }
@@ -320,11 +331,13 @@ public class MainActivity extends NativeActivity implements View.OnKeyListener, 
     }
 
     public void updateTextboxText(final String newText) {
-        runOnUiThread(new Runnable() { // from class: com.mojang.minecraftpe.MainActivity.8
-            @Override // java.lang.Runnable
+        runOnUiThread(new Runnable() {
+            @Override
             public void run() {
-                MainActivity.this.textInputWidget.setText(newText);
-                MainActivity.this.textInputWidget.setSelection(MainActivity.this.textInputWidget.length());
+                if (MainActivity.this.textInputWidget != null) {
+                    MainActivity.this.textInputWidget.setText(newText);
+                    MainActivity.this.textInputWidget.setSelection(MainActivity.this.textInputWidget.length());
+                }
             }
         });
     }

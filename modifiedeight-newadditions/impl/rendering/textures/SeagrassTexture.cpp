@@ -33,11 +33,11 @@ SeagrassTexture::~SeagrassTexture() {
 }
 
 void SeagrassTexture::tick() {
-	if (NinecraftApp::instance && NinecraftApp::instance->currentScreen != nullptr) {
-		memcpy(this->data, seagrassFrames[0], 1024);
-		return;
-	}
 	int frame = (this->ticks / 2) % 18;
 	memcpy(this->data, seagrassFrames[frame], 1024);
 	++this->ticks;
+}
+
+const uint8_t* SeagrassTexture::getStaticFrame0() {
+	return seagrassFrames[0];
 }

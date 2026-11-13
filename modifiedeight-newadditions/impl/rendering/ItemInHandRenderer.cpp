@@ -12,6 +12,7 @@
 #include <rendering/Tesselator.hpp>
 #include <rendering/entity/ItemRenderer.hpp>
 #include <rendering/Textures.hpp>
+#include <rendering/textures/SeagrassTexture.hpp>
 #include <rendering/entity/HumanoidMobRenderer.hpp>
 #include <rendering/entity/PlayerRenderer.hpp>
 #include <rendering/model/HumanoidModel.hpp>
@@ -114,6 +115,38 @@ RenderCall* ItemInHandRenderer::rebuildItem(struct Mob* a2, ItemInstance& a3) {
 	int v20 = (int)(float)(height * icon->maxY);
 	TextureData* td = this->minecraft->texturesPtr->loadAndGetTextureData(v7->field_2C);
 	if (!td || !td->pixels) return v7;
+
+	if (a3.tileClass && Tile::seagrass && a3.tileClass == Tile::seagrass && td->field_C == 0) {
+		const uint8_t* frame0 = SeagrassTexture::getStaticFrame0();
+		int x0 = (int)floorf(icon->minX * (float)td->width);
+		int y0 = (int)floorf(icon->minY * (float)td->height);
+		int x1 = (int)ceilf(icon->maxX * (float)td->width);
+		int y1 = (int)ceilf(icon->maxY * (float)td->height);
+		int rw = x1 - x0;
+		int rh = y1 - y0;
+		if (rw > 0 && rh > 0) {
+			for (int py = 0; py < rh; ++py) {
+				int dy = y0 + py;
+				if (dy < 0 || dy >= td->height) continue;
+				int sy = (py * 16) / rh;
+				for (int px = 0; px < rw; ++px) {
+					int dx = x0 + px;
+					if (dx < 0 || dx >= td->width) continue;
+					int sx = (px * 16) / rw;
+					int sidx = (sy * 16 + sx) * 4;
+					int didx = (dy * td->width + dx) * 4;
+					td->pixels[didx + 0] = frame0[sidx + 0];
+					td->pixels[didx + 1] = frame0[sidx + 1];
+					td->pixels[didx + 2] = frame0[sidx + 2];
+					td->pixels[didx + 3] = frame0[sidx + 3];
+				}
+			}
+			v16 = (float)x0;
+			v19 = (float)y0;
+			v17 = x1;
+			v20 = y1;
+		}
+	}
 
 	Color4 colorTint = Color4::WHITE;
 	int32_t col = -1;
@@ -541,7 +574,7 @@ void ItemInHandRenderer::renderItem(struct Mob* a2, ItemInstance* a3) {
 		frameId = this->_getFrameID(a2, a3);
 		auto&& p = this->field_90.find(frameId);
 		if(p == this->field_90.end()) {
-			this->rebuildItem(a2, *a3); //TODO check
+			this->rebuildItem(a2, *a3);
 			p = this->field_90.find(frameId);
 		}
 		v7 = p->second.get();

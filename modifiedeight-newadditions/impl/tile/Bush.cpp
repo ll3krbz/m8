@@ -24,8 +24,25 @@ bool_t Bush::isCubeShaped() {
 int32_t Bush::getRenderShape() {
 	return 1;
 }
-AABB* Bush::getAABB(Level*, int32_t, int32_t, int32_t) {
+AABB* Bush::getAABB(Level* level, int32_t x, int32_t y, int32_t z) {
 	return 0;
+}
+AABB Bush::getTileAABB(Level* level, int32_t x, int32_t y, int32_t z) {
+	this->updateShape(level, x, y, z);
+	return Tile::getTileAABB(level, x, y, z);
+}
+void Bush::updateShape(LevelSource* level, int32_t x, int32_t y, int32_t z) {
+	if (level) {
+		int32_t data = level->getData(x, y, z);
+		if ((data & 3) > 0 || data >= 8) {
+			this->setShape(0.0f, 0.0f, 0.0f, 1.0f, 0.6f, 1.0f);
+			return;
+		}
+	}
+	this->setShape(0.3f, 0.0f, 0.3f, 0.7f, 0.6f, 0.7f);
+}
+void Bush::updateDefaultShape() {
+	this->setShape(0.3f, 0.0f, 0.3f, 0.7f, 0.6f, 0.7f);
 }
 bool_t Bush::isSolidRender() {
 	return 0;

@@ -59,24 +59,25 @@ void StartMenuScreen::render(int32_t a2, int32_t a3, float a4) {
   td = this->minecraft->texturesPtr->loadAndGetTextureData("gui/title.png");
   if (td) {
     this->minecraft->texturesPtr->loadAndBindTexture("gui/title.png");
-    width = 280.0f;
+    width = (float)td->width;
     v12 = (float)this->width * 0.5;
     v13 = width * 0.5;
     if (v12 <= (float)(width * 0.5)) {
       v13 = (float)this->width * 0.5;
     }
     v14 = (float)(v13 + v13) / width;
-    height = 36.0f;
+    height = (float)td->height;
     glColor4f(1.0, 1.0, 1.0, 1.0);
+    glEnable(GL_TEXTURE_2D);
     Tesselator::instance.begin(4);
     v16 = v12 - v13;
-    Tesselator::instance.vertexUV(v12 - v13, (float)(v14 * height) + 18.0,
+    Tesselator::instance.vertexUV(v12 - v13, (float)(v14 * height) + 4.0,
                                   this->zLayer, 0.0, 1.0);
     v17 = v12 + v13;
-    Tesselator::instance.vertexUV(v17, (float)(v14 * height) + 18.0,
+    Tesselator::instance.vertexUV(v17, (float)(v14 * height) + 4.0,
                                   this->zLayer, 1.0, 1.0);
-    Tesselator::instance.vertexUV(v17, 18.0, this->zLayer, 1.0, 0.0);
-    Tesselator::instance.vertexUV(v16, 18.0, this->zLayer, 0.0, 0.0);
+    Tesselator::instance.vertexUV(v17, 4.0, this->zLayer, 1.0, 0.0);
+    Tesselator::instance.vertexUV(v16, 4.0, this->zLayer, 0.0, 0.0);
     Tesselator::instance.draw(1);
   }
   this->drawString(this->font, this->gameVersion, this->field_150, 62,
@@ -92,7 +93,7 @@ void StartMenuScreen::init() {
   this->field_2C.emplace_back(&this->joinGameButton);
   this->buttons.emplace_back(&this->optionsButton);
   this->field_2C.emplace_back(&this->optionsButton);
-  this->mojangABMaybe = "\xFFMojang AB, ModifiedEight New Additions 1.7.2.1_test3 ";
+  this->mojangABMaybe = "\xFFMojang AB, ModifiedEight New Additions 1.7.2.1_test4 ";
   this->gameVersion = Common::getGameVersionString();
   this->optionsButton.active = 0;
   this->startGameButton.active = 0;

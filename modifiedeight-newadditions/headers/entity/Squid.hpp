@@ -23,6 +23,7 @@ struct Squid: WaterAnimal {
 	virtual int32_t getEntityTypeId() const;
 	virtual std::string* getTexture();
 	virtual void aiStep();
+	virtual void baseTick();
 	virtual void die(Entity*);
 	virtual void dropDeathLoot();
 	virtual int32_t getAmbientSoundInterval();

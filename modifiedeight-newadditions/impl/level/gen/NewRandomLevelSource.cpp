@@ -15,6 +15,9 @@
 #include <level/gen/feature/VineFeature.hpp>
 #include <level/gen/feature/VillageFeature.hpp>
 #include <level/gen/feature/DesertTempleFeature.hpp>
+#include <level/gen/feature/SwampHutFeature.hpp>
+#include <level/gen/feature/IglooFeature.hpp>
+/* mineshaft */
 #include <level/gen/feature/OreFeature.hpp>
 #include <level/gen/feature/ReedsFeature.hpp>
 #include <level/gen/feature/SpringFeature.hpp>
@@ -1311,7 +1314,7 @@ void NewRandomLevelSource::postProcess(struct ChunkSource* a2, int32_t chunkX, i
 		f.place(this->level, a8, (v108 & 0xF) + chunkXStart + 8, v109 % (v136 % (v138 % 0x70u + 8) + 8), chunkZStart + (v110 & 0xF) + 8);
 	}
 	}
-	if (Tile::seagrass) {
+	if (Tile::seagrass && biomeAtChunk != Biome::mushroom && biomeAtChunk != Biome::taiga && biomeAtChunk != Biome::tundra) {
 		for (int32_t ox = 0; ox < 16; ++ox) {
 			for (int32_t oz = 0; oz < 16; ++oz) {
 				if ((a8->genrand_int32() % 100) < 65) {
@@ -1369,6 +1372,38 @@ void NewRandomLevelSource::postProcess(struct ChunkSource* a2, int32_t chunkX, i
 			DesertTempleFeature dtf;
 			dtf.place(this->level, a8, tx, ty, tz);
 		}
+
+		int32_t hChunkX = (int32_t)floorf((float)chunkX / 32.0f);
+		int32_t hChunkZ = (int32_t)floorf((float)chunkZ / 32.0f);
+		uint64_t hSeed = ((uint64_t)hChunkX * 341873128712ULL + (uint64_t)hChunkZ * 132897987541ULL) ^ (uint64_t)this->level->getSeed() ^ 14357620ULL;
+		Random hRand(hSeed);
+		int32_t targetHChunkX = hChunkX * 32 + (hRand.genrand_int32() % 24);
+		int32_t targetHChunkZ = hChunkZ * 32 + (hRand.genrand_int32() % 24);
+		if (chunkX == targetHChunkX && chunkZ == targetHChunkZ && biomeAtChunk == Biome::swampland) {
+			int32_t hx = chunkXStart + 4;
+			int32_t hz = chunkZStart + 4;
+			int32_t hy = this->level->getHeightmap(hx + 3, hz + 4);
+			if (hy <= 0) hy = 64;
+			SwampHutFeature shf(true);
+			shf.place(this->level, a8, hx, hy, hz);
+		}
+
+		int32_t iChunkX = (int32_t)floorf((float)chunkX / 32.0f);
+		int32_t iChunkZ = (int32_t)floorf((float)chunkZ / 32.0f);
+		uint64_t iSeed = ((uint64_t)iChunkX * 341873128712ULL + (uint64_t)iChunkZ * 132897987541ULL) ^ (uint64_t)this->level->getSeed() ^ 14357618ULL;
+		Random iRand(iSeed);
+		int32_t targetIChunkX = iChunkX * 32 + (iRand.genrand_int32() % 24);
+		int32_t targetIChunkZ = iChunkZ * 32 + (iRand.genrand_int32() % 24);
+		if (chunkX == targetIChunkX && chunkZ == targetIChunkZ && (biomeAtChunk == Biome::tundra || biomeAtChunk == Biome::icePeaks || biomeAtChunk == Biome::taiga)) {
+			int32_t ix = chunkXStart + 4;
+			int32_t iz = chunkZStart + 4;
+			int32_t iy = this->level->getHeightmap(ix + 3, iz + 3);
+			if (iy <= 0) iy = 64;
+			IglooFeature igf(true);
+			igf.place(this->level, a8, ix, iy, iz);
+		}
+
+		(void)0;
 	}
 	if(this->field_72CC) {
 		MobSpawner::postProcessSpawnMobs(this->level, biomeAtChunk, chunkXStart + 8, chunkZStart + 8, 16, 16, a8);

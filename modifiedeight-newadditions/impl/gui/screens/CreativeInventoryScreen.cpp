@@ -426,6 +426,7 @@ void CreativeInventoryScreen::populateFilteredItems(bool isServer) {
   addTabItem(4, Item::seeds_pumpkin);
   addTabItem(4, Item::seeds_melon);
   addTabItem(4, Item::seeds_beetroot);
+  addTabItem(4, Item::snowBall);
   addTabItem(4, Item::wheat);
   addTabItem(4, Item::reeds);
   addTabItem(4, Item::sugar);

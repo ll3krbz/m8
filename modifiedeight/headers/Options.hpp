@@ -56,6 +56,8 @@ struct Options{
 		static Options::Option LOD_CHUNKS;
 		static Options::Option SMOOTH_CHUNKS;
 		static Options::Option SWAP_JUMP_AND_SNEAK;
+		static Options::Option SHOW_CAPE;
+		static Options::Option SKIN_SOURCE;
 	};
 
 	static Options* instance;
@@ -149,9 +151,12 @@ struct Options{
 	static std::vector<int32_t> CHAT_COLOR_LEVELS;
 	static std::vector<int32_t> CHAT_BG_COLOR_LEVELS;
 	static std::vector<int32_t> NEW_ADDITIONS_LEVELS;
+	static std::vector<int32_t> SKIN_SOURCE_LEVELS;
 
 	int32_t chatColor;
 	int32_t chatBgColor;
+	bool_t showCape;
+	int32_t skinSource;
 
 	//~Options(void); //TODO check is needed by vector destructor
 	void validateVersion(void);

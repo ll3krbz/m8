@@ -45,6 +45,9 @@ struct Player : Mob{
 	bool_t isDestroying;
 	struct FishingHook* fishing;
 	ItemInstance* enderChestItems[27];
+	std::string capeTexture;
+	double xCape, yCape, zCape;
+	double xc, yc, zc;
 
 	Player(Level*, bool_t);
 	void _init();
@@ -135,4 +138,13 @@ struct Player : Mob{
 	virtual void openTextEdit(struct TileEntity*);
 	virtual bool_t isLocalPlayer();
 	virtual void closeContainer();
+
+	std::string getCapeTexture();
+	void setCapeTexture(const std::string& name);
+	double getCapeX() const { return xCape; }
+	double getCapeY() const { return yCape; }
+	double getCapeZ() const { return zCape; }
+	double getCapePrevX() const { return xc; }
+	double getCapePrevY() const { return yc; }
+	double getCapePrevZ() const { return zc; }
 };

@@ -1,5 +1,6 @@
 #include <tile/PumpkinTile.hpp>
 #include <entity/Mob.hpp>
+#include <entity/Snowman.hpp>
 #include <level/Level.hpp>
 #include <tile/material/Material.hpp>
 #include <rendering/TextureAtlasTextureItem.hpp>
@@ -54,7 +55,23 @@ bool_t PumpkinTile::mayPlace(Level* level, int32_t x, int32_t y, int32_t z) {
 	}
 	return result;
 }
-void PumpkinTile::onPlace(Level*, int32_t, int32_t, int32_t) {
+void PumpkinTile::onPlace(Level* level, int32_t x, int32_t y, int32_t z) {
+	if (!level) return;
+	if (level->getTile(x, y - 1, z) == Tile::snow->blockID && level->getTile(x, y - 2, z) == Tile::snow->blockID) {
+		level->setTile(x, y, z, 0, 2);
+		level->setTile(x, y - 1, z, 0, 2);
+		level->setTile(x, y - 2, z, 0, 2);
+
+		level->levelEvent(2001, x, y, z, this->blockID);
+		level->levelEvent(2001, x, y - 1, z, Tile::snow->blockID);
+		level->levelEvent(2001, x, y - 2, z, Tile::snow->blockID);
+
+		if (!level->isClientMaybe) {
+			Snowman* golem = new Snowman(level);
+			golem->moveTo((float)x + 0.5f, (float)(y - 2), (float)z + 0.5f, 0.0f, 0.0f);
+			level->addEntity(golem);
+		}
+	}
 }
 int32_t PumpkinTile::getPlacementDataValue(Level*, int32_t, int32_t, int32_t, int32_t, float, float, float, Mob* a10, int32_t) {
 	float v11;	 // s15

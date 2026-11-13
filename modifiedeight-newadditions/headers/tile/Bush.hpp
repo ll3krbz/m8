@@ -10,6 +10,9 @@ struct Bush : Tile{
 	virtual bool_t isCubeShaped();
 	virtual int32_t getRenderShape();
 	virtual AABB* getAABB(Level*, int32_t, int32_t, int32_t);
+	virtual AABB getTileAABB(Level*, int32_t, int32_t, int32_t);
+	virtual void updateShape(LevelSource*, int32_t, int32_t, int32_t);
+	virtual void updateDefaultShape();
 	virtual bool_t isSolidRender();
 	virtual bool_t mayPlace(Level*, int32_t, int32_t, int32_t, uint8_t);
 	virtual void tick(Level*, int32_t, int32_t, int32_t, Random*);

@@ -191,7 +191,16 @@ static std::string sub_D6677960(std::string& a2, std::string& a3) {
 
 bool_t ExternalFileLevelStorage::load(Player* a2) {
 	if(!a2) return 0;
-	FILE* v4 = fopen(sub_D6677960(this->dataFolder, a2->field_CA4).c_str(), "rb");
+	std::string pPath;
+	FILE* v4 = 0;
+	if (!a2->username.empty()) {
+		pPath = sub_D6677960(this->dataFolder, a2->username);
+		v4 = fopen(pPath.c_str(), "rb");
+	}
+	if (!v4 && !a2->field_CA4.empty()) {
+		pPath = sub_D6677960(this->dataFolder, a2->field_CA4);
+		v4 = fopen(pPath.c_str(), "rb");
+	}
 	if(!v4) return 0;
 	int sz = 0, v11 = 0, n = 0;
 	if (fread(&sz, 4, 1, v4) != 1 || fread(&v11, 4, 1, v4) != 1 || fread(&n, 4, 1, v4) != 1) {
@@ -234,7 +243,8 @@ bool_t ExternalFileLevelStorage::save(Player* a2) {
 		Tag::writeNamedTag(&v11, &v10);
 		v11.deleteChildren();
 	}
-	std::string newa = sub_D6677960(this->dataFolder, a2->field_CA4);
+	std::string key = !a2->username.empty() ? a2->username : a2->field_CA4;
+	std::string newa = sub_D6677960(this->dataFolder, key);
 	std::string v11 = newa + ".tmp";
 	FILE* v5 = fopen(v11.c_str(), "wb");
 	if(v5) {

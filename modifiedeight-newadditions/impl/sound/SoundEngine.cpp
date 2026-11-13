@@ -296,6 +296,25 @@ void SoundEngine::init(struct Minecraft* a2, struct Options* a3) {
 		loadOggSound(this->sounds, "block.copper.step", b);
 		loadOggSound(this->sounds, "step.copper", b);
 	}
+
+	for (int i = 1; i <= 4; ++i) {
+		char b[64];
+		snprintf(b, sizeof(b), "sounds/mob/snowgolem/ambient%d.ogg", i);
+		loadOggSound(this->sounds, "mob.snowgolem.ambient", b);
+		snprintf(b, sizeof(b), "sounds/mob/snowgolem/idle%d.ogg", i);
+		loadOggSound(this->sounds, "mob.snowgolem.ambient", b);
+		snprintf(b, sizeof(b), "sounds/mob/snowgolem/hurt%d.ogg", i);
+		loadOggSound(this->sounds, "mob.snowgolem.hurt", b);
+		snprintf(b, sizeof(b), "sounds/mob/snowgolem/death%d.ogg", i);
+		loadOggSound(this->sounds, "mob.snowgolem.death", b);
+	}
+	loadOggSound(this->sounds, "mob.snowgolem.ambient", "sounds/mob/snowgolem/ambient.ogg");
+	loadOggSound(this->sounds, "mob.snowgolem.hurt", "sounds/mob/snowgolem/hurt.ogg");
+	loadOggSound(this->sounds, "mob.snowgolem.death", "sounds/mob/snowgolem/death.ogg");
+	loadOggSound(this->sounds, "mob.snowgolem.shoot", "sounds/mob/snowgolem/shoot.ogg");
+	loadOggSound(this->sounds, "mob.snowgolem.shear", "sounds/mob/snowgolem/shear.ogg");
+	loadOggSound(this->sounds, "mob.sheep.shear", "sounds/mob/sheep/shear.ogg");
+	loadOggSound(this->sounds, "mob.sheep.shear", "sounds/mob/snowgolem/shear.ogg");
 }
 void SoundEngine::play(const std::string& a2, float a3, float a4, float a5, float a6, float a7) {
 	float v8;  // s16

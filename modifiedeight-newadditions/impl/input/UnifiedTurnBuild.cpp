@@ -149,8 +149,8 @@ Vec3 UnifiedTurnBuild::getTurnDelta() {
 	int v17; // r3
 	double v18; // d9
 	float v19; // s20
-	float v20; // s21
-	float v21; // s20
+	float v20 = 0.0f; // s21
+	float v21 = 0.0f; // s20
 	float v22; // s15
 	float v23; // s24
 	int v24; // r3

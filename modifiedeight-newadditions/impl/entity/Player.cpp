@@ -58,6 +58,10 @@ Player::Player(Level* a2, bool_t a3)
 	this->field_B9C = 180.0;
 	this->field_E8 = 20;
 	this->skin = "mob/char.png";
+	this->capeTexture = "";
+	this->xCape = this->xc = this->posX;
+	this->yCape = this->yc = this->posY;
+	this->zCape = this->zc = this->posZ;
 	this->synchedEntityData.define<int8_t>(16, 0);
 	this->synchedEntityData.define<Pos>(17, {0, 0, 0});
 }
@@ -527,6 +531,23 @@ void Player::tick() {
 			this->sleepingCounter = 0;
 		}
 	}
+
+	this->xc = this->xCape;
+	this->yc = this->yCape;
+	this->zc = this->zCape;
+	double dxCape = this->posX - this->xCape;
+	double dyCape = this->posY - this->yCape;
+	double dzCape = this->posZ - this->zCape;
+	if (dxCape > 10.0) { this->xc = this->xCape = this->posX; }
+	if (dzCape > 10.0) { this->zc = this->zCape = this->posZ; }
+	if (dyCape > 10.0) { this->yc = this->yCape = this->posY; }
+	if (dxCape < -10.0) { this->xc = this->xCape = this->posX; }
+	if (dzCape < -10.0) { this->zc = this->zCape = this->posZ; }
+	if (dyCape < -10.0) { this->yc = this->yCape = this->posY; }
+	this->xCape += dxCape * 0.25;
+	this->zCape += dzCape * 0.25;
+	this->yCape += dyCape * 0.25;
+
 	Mob::tick();
 	if (g_morningFogTicks > 0) g_morningFogTicks--;
 	if (!this->isSleeping() && this->entityHeight < 1.7f) {
@@ -557,6 +578,36 @@ void Player::tick() {
 		if(this->isOnFire()) {
 			if(this->level->getLevelData()->getGameType() == 1) {
 				this->fire = 1;
+			}
+		}
+	}
+	if (this->isSneaking() && this->level) {
+		for (auto* other : this->level->playersMaybe) {
+			if (other && other != this && other->entityId > this->entityId && other->isSneaking()) {
+				float h1X = this->posX;
+				float h1Y = this->boundingBox.minY + 1.40f;
+				float h1Z = this->posZ;
+				float h2X = other->posX;
+				float h2Y = other->boundingBox.minY + 1.40f;
+				float h2Z = other->posZ;
+				float dx = h1X - h2X;
+				float dy = h1Y - h2Y;
+				float dz = h1Z - h2Z;
+				float distSq = dx * dx + dy * dy + dz * dz;
+				if (distSq < 1.25f * 1.25f && fabsf(dy) < 0.75f) {
+					if (this->random.nextFloat() < 0.35f) {
+						float midX = (h1X + h2X) * 0.5f;
+						float midY = (h1Y + h2Y) * 0.5f;
+						float midZ = (h1Z + h2Z) * 0.5f;
+						this->level->addParticle(PT_HEART,
+							midX + (this->random.nextFloat() - 0.5f) * 0.3f,
+							midY + (this->random.nextFloat() - 0.5f) * 0.25f,
+							midZ + (this->random.nextFloat() - 0.5f) * 0.3f,
+							this->random.nextGaussian() * 0.02f,
+							this->random.nextGaussian() * 0.02f,
+							this->random.nextGaussian() * 0.02f, 0);
+					}
+				}
 			}
 		}
 	}
@@ -1279,4 +1330,13 @@ bool_t Player::isLocalPlayer() {
 }
 void Player::closeContainer() {
 	this->currentContainer = 0;
+}
+
+
+std::string Player::getCapeTexture() {
+	return this->capeTexture;
+}
+
+void Player::setCapeTexture(const std::string& name) {
+	this->capeTexture = name;
 }

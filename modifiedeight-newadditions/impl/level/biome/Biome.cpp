@@ -174,9 +174,7 @@ void Biome::initBiomes(void) {
 	Biome::rainForest->creatureVec.emplace_back(Biome::MobSpawnerData(30, 22, 1, 3));
 	Biome::rainForest->waterCreatureVec.emplace_back(Biome::MobSpawnerData(8, 39, 1, 3));
 	Biome::swampland = (new SwampBiome())->clearMobs(1, 0, 0)->setColor(0x7F9B2)->setName("Swampland")->setLeafColor(0x6A7039)->setTemperatureAndDownfall(0.8f, 0.9f);
-	Biome::swampland->monsterVec.emplace_back(Biome::MobSpawnerData(120, 40, 3, 6));
 	Biome::swampland->monsterVec.emplace_back(Biome::MobSpawnerData(120, 37, 4, 8));
-	Biome::swampland->creatureVec.emplace_back(Biome::MobSpawnerData(120, 40, 3, 6));
 	Biome::swampland->creatureVec.emplace_back(Biome::MobSpawnerData(100, 37, 4, 8));
 	Biome::swampland->creatureVec.emplace_back(Biome::MobSpawnerData(10, 10, 1, 2));
 	Biome::swampland->creatureVec.emplace_back(Biome::MobSpawnerData(10, 12, 1, 2));

@@ -6,11 +6,13 @@
 Snowball::Snowball(Level* level, Mob* thrower)
 	: Throwable(level, thrower) {
 	this->entityRenderId = THROWNSNOWBALL;
+	this->damage = 0;
 	//TODO probably has more stuff but it was inlined
 }
 Snowball::Snowball(Level* level)
 	: Throwable(level) {
 	this->entityRenderId = THROWNSNOWBALL;
+	this->damage = 0;
 }
 
 Snowball::~Snowball() {
@@ -22,8 +24,8 @@ int32_t Snowball::getEntityTypeId() const {
 void Snowball::onHit(const HitResult& a2) {
 	int32_t v3; // r5
 
-	if(a2.hitType == 1) {
-		a2.entity->hurt(this, 0);
+	if(a2.hitType == 1 && a2.entity) {
+		a2.entity->hurt(this, this->damage);
 	}
 	v3 = 6;
 	do {

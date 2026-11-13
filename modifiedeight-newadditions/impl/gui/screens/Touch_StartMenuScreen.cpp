@@ -452,14 +452,26 @@ void Touch::StartMenuScreen::render(int32_t a2, int32_t a3, float a4) {
   this->playOnRealmsButton.setActiveAndVisibility(mco);
   this->setupPlayButtons(mco);
   this->renderMenuBackground(a4);
-  float time = (float)this->minecraft->field_D34;
-  const char* logoName = "MODIFIEDEIGHT";
-  float logoTop = (float)this->field_144;
-  float baseLogoWidth = rainbowLogoTextWidth(this->font, logoName, 1.0f);
-  float logoScale = std::min(4.0f, std::max(3.0f, ((float)this->width * 0.88f) / baseLogoWidth));
-  float logoWidth = rainbowLogoTextWidth(this->font, logoName, logoScale);
-  float logoX = std::max(0.0f, ((float)this->width - logoWidth) * 0.5f);
-  drawRainbowLogoText(this->font, logoName, logoX, logoTop, logoScale, time);
+  glEnable(GL_TEXTURE_2D);
+  glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+  TextureData* td = this->minecraft->texturesPtr->loadAndGetTextureData("gui/title.png");
+  if (td) {
+    this->minecraft->texturesPtr->loadAndBindTexture("gui/title.png");
+    if (this->field_148 <= 0.0f || this->field_14C <= 0.0f) {
+      float halfWidth = (float)td->width * 0.5f;
+      if ((float)this->width * 0.5f <= halfWidth) halfWidth = (float)this->width * 0.5f;
+      this->field_148 = halfWidth * 2.0f;
+      this->field_140 = (float)this->width * 0.5f - halfWidth;
+      this->field_144 = 12.0f;
+      this->field_14C = (this->field_148 / (float)td->width) * (float)td->height;
+    }
+    Tesselator::instance.begin(4);
+    Tesselator::instance.vertexUV(this->field_140, this->field_144 + this->field_14C, this->zLayer, 0, 1);
+    Tesselator::instance.vertexUV(this->field_140 + this->field_148, this->field_144 + this->field_14C, this->zLayer, 1, 1);
+    Tesselator::instance.vertexUV(this->field_140 + this->field_148, this->field_144, this->zLayer, 1, 0);
+    Tesselator::instance.vertexUV(this->field_140, this->field_144, this->zLayer, 0, 0);
+    Tesselator::instance.draw(1);
+  }
   float logoRight = this->field_140 + this->field_148;
   float logoBottom = this->field_144 + this->field_14C;
   this->drawString(this->font, this->field_138, 1, this->height - 10, 0xffffff);
@@ -470,10 +482,11 @@ void Touch::StartMenuScreen::render(int32_t a2, int32_t a3, float a4) {
   double v17 = this->field_150 + this->minecraft->field_D34;
   this->field_150 = v17;
 
+  float scale = (float)(powf(sin(v17 * 3.14 * 2.3), 4.0) * 0.035) + 1.16f;
   this->font->drawTransformed(
-      gSplashes[Touch::StartMenuScreen::currentSplash], logoRight * 0.95f, logoBottom - 4.0f,
-      0xFFFFFF00, -20, (float)(powf(sin(v17 * 3.14 * 2.3), 4.0) * 0.06) + 1.3,
-      1, (float)this->width * 0.3125);
+      gSplashes[Touch::StartMenuScreen::currentSplash], logoRight * 0.66f, logoBottom - 15.0f,
+      0xFFFFFF00, -20, scale,
+      1, (float)this->width * 0.34f);
   Screen::render(a2, a3, a4);
 }
 void Touch::StartMenuScreen::init() {
@@ -533,20 +546,21 @@ void Touch::StartMenuScreen::init() {
   this->field_2C.emplace_back(&this->playButton);
   this->field_2C.emplace_back(&this->playOnRealmsButton);
   this->field_2C.emplace_back(this->settingsButtonMaybe);
-  this->field_138 = "\x0fMojang AB, ModifiedEight New Additions 1.7.2.1_test3 ";
+  this->field_138 = "\x0fMojang AB, ModifiedEight New Additions 1.7.2.1_test4 ";
   this->field_13C = Common::getGameVersionString();
   this->playOnRealmsButton.active = 0;
   this->playButton.active = 0;
 }
 
 void Touch::StartMenuScreen::setupPositions() {
+  TextureData *data = this->minecraft->texturesPtr->loadAndGetTextureData("gui/title.png");
   int32_t width = this->width;
-  this->field_144 = 30;
-  int32_t logoWidth = 280;
-  if (width < logoWidth) logoWidth = width;
-  this->field_148 = logoWidth;
-  this->field_140 = (width - logoWidth) / 2;
-  this->field_14C = 40;
+  this->field_144 = 12;
+  float halfWidth = data ? data->width * 0.5f : width * 0.5f;
+  if (width * 0.5f <= halfWidth) halfWidth = width * 0.5f;
+  this->field_148 = halfWidth * 2.0f;
+  this->field_140 = width * 0.5f - halfWidth;
+  this->field_14C = data ? (this->field_148 / data->width) * data->height : 36.0f;
 
   bool_t mco = 1;
   this->setupPlayButtons(mco);

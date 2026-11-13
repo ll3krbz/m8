@@ -76,7 +76,8 @@ void Squid::aiStep() {
 		}
 	}
 
-	if (this->isInWater()) {
+	if (this->isInWater() || this->isUnderLiquid(Material::water)) {
+		this->air = 300;
 		if (this->tentacleMovement < (float)M_PI) {
 			float f = this->tentacleMovement / (float)M_PI;
 			this->tentacleAngle = Mth::sin(f * f * (float)M_PI) * (float)M_PI * 0.25f;
@@ -119,23 +120,66 @@ void Squid::aiStep() {
 		this->isJumping = 0;
 	} else {
 		this->tentacleAngle = fabsf(Mth::sin(this->tentacleMovement)) * (float)M_PI * 0.25f;
-		if (this->onGround) {
-			if (this->random.nextFloat() < 0.05f) {
-				this->motionX = (this->random.nextFloat() - 0.5f) * 0.2f;
-				this->motionZ = (this->random.nextFloat() - 0.5f) * 0.2f;
-				this->motionY = 0.2f;
+		if (this->level) {
+			bool foundWater = false;
+			float bestDx = 0.0f, bestDz = 0.0f;
+			float bestDistSq = 99999.0f;
+			int bx = (int)floorf(this->posX);
+			int by = (int)floorf(this->posY);
+			int bz = (int)floorf(this->posZ);
+			for (int r = 1; r <= 16 && !foundWater; ++r) {
+				for (int dx = -r; dx <= r; ++dx) {
+					for (int dz = -r; dz <= r; ++dz) {
+						if (abs(dx) != r && abs(dz) != r) continue;
+						for (int dy = -4; dy <= 2; ++dy) {
+							int t = this->level->getTile(bx + dx, by + dy, bz + dz);
+							Material* m = this->level->getMaterial(bx + dx, by + dy, bz + dz);
+							if ((m && m->isLiquid()) || t == 8 || t == 9) {
+								float dSq = (float)(dx * dx + dz * dz);
+								if (dSq < bestDistSq) {
+									bestDistSq = dSq;
+									bestDx = (float)dx;
+									bestDz = (float)dz;
+									foundWater = true;
+								}
+							}
+						}
+					}
+				}
+			}
+			if (foundWater) {
+				float len = sqrtf(bestDx * bestDx + bestDz * bestDz);
+				if (len > 0.001f) {
+					this->motionX = (bestDx / len) * 0.18f;
+					this->motionZ = (bestDz / len) * 0.18f;
+					this->yaw = (float)(atan2f(bestDz, bestDx) * 180.0 / M_PI) - 90.0f;
+				}
+				if (this->onGround) {
+					this->motionY = 0.28f;
+				}
+			} else if (this->onGround && this->random.nextFloat() < 0.2f) {
+				this->motionX = (this->random.nextFloat() - 0.5f) * 0.25f;
+				this->motionZ = (this->random.nextFloat() - 0.5f) * 0.25f;
+				this->motionY = 0.25f;
 			}
 		}
 		this->motionY = (this->motionY - 0.08f) * 0.98f;
 		this->xBodyRot += (-90.0f - this->xBodyRot) * 0.02f;
+	}
+}
 
-		if (--this->air <= -20) {
+void Squid::baseTick() {
+	int prevAir = this->air;
+	WaterAnimal::baseTick();
+	if (this->isInWater() || this->isUnderLiquid(Material::water)) {
+		this->air = 300;
+	} else {
+		this->air = prevAir - 1;
+		if (this->air <= -20) {
 			this->air = 0;
+			this->field_DC = 0;
 			this->hurt(0, 1);
 		}
-	}
-	if (this->isInWater()) {
-		this->air = 300;
 	}
 }
 

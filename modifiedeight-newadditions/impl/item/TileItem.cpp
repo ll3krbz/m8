@@ -256,9 +256,6 @@ bool_t TileItem::useOn(ItemInstance* item, Player* player, Level* level, int32_t
 	return 1;
 }
 TextureUVCoordinateSet* TileItem::getIcon(int32_t data, int32_t a3, bool_t inHand) {
-	if (this->iconUV.minX != 0.0f || this->iconUV.maxX != 0.0f || this->iconUV.minY != 0.0f || this->iconUV.maxY != 0.0f) {
-		return &this->iconUV;
-	}
 	if (this->blockID >= 0 && this->blockID < 256 && Tile::tiles[this->blockID]) {
 		TextureUVCoordinateSet* tex = Tile::tiles[this->blockID]->getCarriedTexture(2, data);
 		if (!tex || (tex->minX == 0.0f && tex->maxX == 0.0f && tex->minY == 0.0f && tex->maxY == 0.0f)) {
@@ -267,6 +264,9 @@ TextureUVCoordinateSet* TileItem::getIcon(int32_t data, int32_t a3, bool_t inHan
 		if (tex && (tex->minX != 0.0f || tex->maxX != 0.0f || tex->minY != 0.0f || tex->maxY != 0.0f)) {
 			return tex;
 		}
+	}
+	if (this->iconUV.minX != 0.0f || this->iconUV.maxX != 0.0f || this->iconUV.minY != 0.0f || this->iconUV.maxY != 0.0f) {
+		return &this->iconUV;
 	}
 	return Item::getIcon(data, a3, inHand);
 }

@@ -112,6 +112,26 @@ void HumanoidModel::setupAnim(float a2, float a3, float a4, float a5, float a6, 
 	float yRotAngle; // s13
 	float v30;		 // s14
 
+	this->headModel.xOffset = 0.0f;
+	this->headModel.yOffset = 0.0f;
+	this->headModel.zOffset = 0.0f;
+	this->bodyModel.xOffset = 0.0f;
+	this->bodyModel.yOffset = 0.0f;
+	this->bodyModel.zOffset = 0.0f;
+	this->bodyModel.yRotAngle = 0.0f;
+	this->rightArmModel.xOffset = -5.0f;
+	this->rightArmModel.yOffset = 2.0f;
+	this->rightArmModel.zOffset = 0.0f;
+	this->leftArmModel.xOffset = 5.0f;
+	this->leftArmModel.yOffset = 2.0f;
+	this->leftArmModel.zOffset = 0.0f;
+	this->rightLegModel.xOffset = -2.0f;
+	this->rightLegModel.yOffset = 12.0f;
+	this->rightLegModel.zOffset = 0.0f;
+	this->leftLegModel.xOffset = 2.0f;
+	this->leftLegModel.yOffset = 12.0f;
+	this->leftLegModel.zOffset = 0.0f;
+
 	this->headModel.yRotAngle = a5 / (float)(180.0 / 3.1416);
 	v10 = a2 * 0.6662;
 	this->headModel.xRotAngle = a6 / (float)(180.0 / 3.1416);

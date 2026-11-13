@@ -173,7 +173,7 @@ void Font::drawTransformed(const std::string& s, float x, float y, int32_t col, 
 	float v9 = a7;
 	float pixelLength = (a8 || a9 < 3.4028e38) ? this->getPixelLength(s) : 0;
 	if(pixelLength > a9){
-		a9 = a7*(float)(a9/pixelLength);
+		v9 = a7*(float)(a9/pixelLength);
 	}
 	glMatrixMode(0x1700u);
 	glPushMatrix();
