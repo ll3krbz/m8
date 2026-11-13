@@ -15,6 +15,7 @@ struct Mth{
 	static uint32_t fastRandom(void);
 	static float random(void);
 	static uint32_t random(int32_t);
+	static float clamp(float, float, float);
 	static float clampRotate(float, float, float);
 	static float sqrt(float);
 	static float atan2(float, float);

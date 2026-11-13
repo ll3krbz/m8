@@ -395,6 +395,20 @@ void Gui::render(float a2, bool_t a3, int32_t a4, int32_t a5) {
   if (minecraftInst->level) {
     if (minecraftInst->player) {
       DisableState v25(0xB71);
+      struct HudStateGuard {
+        GLboolean fog;
+        GLboolean light;
+        HudStateGuard() {
+          fog = glIsEnabled(GL_FOG);
+          light = glIsEnabled(GL_LIGHTING);
+          glDisable(GL_FOG);
+          glDisable(GL_LIGHTING);
+        }
+        ~HudStateGuard() {
+          if (fog) glEnable(GL_FOG);
+          if (light) glEnable(GL_LIGHTING);
+        }
+      } hudStateGuard;
       v8 = this->minecraftInst;
       font = v8->font;
       v10 = v8->useTouchscreen();
@@ -446,6 +460,8 @@ void Gui::render(float a2, bool_t a3, int32_t a4, int32_t a5) {
           glEnable(GL_BLEND);
           glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
           glDisable(GL_DEPTH_TEST);
+          glDisable(GL_FOG);
+          glDisable(GL_LIGHTING);
           glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
           float startY = 2.0f;
@@ -466,7 +482,7 @@ void Gui::render(float a2, bool_t a3, int32_t a4, int32_t a5) {
             }
 
             char_t dbgText1[128];
-            sprintf(dbgText1, "ModifiedEight New Additions 1.7.2.1_test4 (%d fps)",
+            sprintf(dbgText1, "ModifiedEight New Additions 1.7.2.1_test5 (%d fps)",
                     fps);
             font->drawShadow(dbgText1, 2.0f, startY, 0xFFFFFFFF);
             startY += 10.0f;

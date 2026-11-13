@@ -16,4 +16,7 @@ struct WaterAnimal: PathfinderMob
 	virtual float getBaseSpeed();
 	virtual bool_t canSpawn();
 	virtual bool_t removeWhenFarAway();
+	bool_t isWaterAt(int32_t, int32_t, int32_t) const;
+	virtual void updateAi();
+	virtual void tick();
 };

@@ -31,6 +31,7 @@
 #include <network/packet/RequestChunkPacket.hpp>
 #include <network/packet/RespawnPacket.hpp>
 #include <network/packet/SetEntityLinkPacket.hpp>
+#include <network/packet/SetEntityDataPacket.hpp>
 #include <network/packet/SetHealthPacket.hpp>
 #include <network/packet/TileEventPacket.hpp>
 #include <network/packet/UseItemPacket.hpp>
@@ -676,6 +677,11 @@ void ServerSideNetworkHandler::handle(const RakNet::RakNetGUID& a2, struct Playe
 		if(p) {
 			if(p != this->minecraft->player) {
 				((ServerPlayer*)p)->setPlayerInput(pk->moveForward, pk->moveStrafe, pk->isJumping, pk->isSneaking);
+				SynchedEntityData* ed = p->getEntityData();
+				if(ed && ed->isDirty) {
+					SetEntityDataPacket dp(p->entityId, 0, ed->packDirty());
+					this->raknetInstance->send(dp);
+				}
 			}
 		}
 	}

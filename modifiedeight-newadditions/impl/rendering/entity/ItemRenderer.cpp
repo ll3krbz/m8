@@ -267,7 +267,7 @@ void ItemRenderer::renderGuiItemCorrect(Font* a1, Textures* a2, const ItemInstan
 			ChestRenderer::renderGuiChest(a2, isEnder, (float)a4, (float)a5, 1.0f, 1.0f);
 			return;
 		} else if(a3->tileClass && (v9 = a3->tileClass->getRenderShape(), TileRenderer::canRender(v9))) {
-			a2->loadAndBindTexture("terrain.png");
+			a2->loadAndBindTexture("terrain-atlas.tga");
 			glPushMatrix();
 			glTranslatef((float)(a4 - 2), (float)(a5 + 3), -8.0);
 			glScalef(10.0, 10.0, 10.0);

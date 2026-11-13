@@ -15,6 +15,11 @@ struct Squid: WaterAnimal {
 	float tx;
 	float ty;
 	float tz;
+	float targetTx;
+	float targetTy;
+	float targetTz;
+	float swimPulse;
+	int32_t wanderTicks;
 
 	Squid(Level*);
 	virtual ~Squid();

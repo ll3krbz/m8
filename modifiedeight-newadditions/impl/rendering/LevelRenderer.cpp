@@ -834,7 +834,7 @@ void LevelRenderer::renderEntities(Vec3 a2, FrustumCuller *a3, bool_t a4,
               this->minecraft->player->inventory->getSelected();
           if (held && (held->getId() == 50 || held->getId() == 89 ||
                        held->getId() == 91 || held->getId() == 327)) {
-            GLfloat lightPos[] = {0.0f, 0.0f, 0.0f, 1.0f};
+            GLfloat lightPos[] = {0.0f, 1.0f, 0.5f, 0.0f};
             GLfloat lightDiff[] = {1.0f, held->getId() == 89 ? 0.95f : 0.85f,
                                    held->getId() == 89 ? 0.85f : 0.55f, 1.0f};
             GLfloat lightAmb[] = {0.35f, held->getId() == 89 ? 0.35f : 0.3f,

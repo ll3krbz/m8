@@ -120,7 +120,8 @@ void TouchscreenInput::rebuild() {
         (this->field_42 || (hideGUI = this->field_41) != 0)) {
       hideGUI = 1;
     }
-    if (!Gamepad::connected && !this->minecraft->player->isRiding()) {
+    bool isRidingMinecart = this->minecraft->player->isRiding() && this->minecraft->player->ridingAt && this->minecraft->player->ridingAt->getEntityTypeId() == 84;
+    if (!Gamepad::connected && !isRidingMinecart) {
       if (hideGUI || this->idkWhatIsThis2) {
         v4 = _D6E06658;
       } else if (this->isButtonDown(102)) {
@@ -302,8 +303,10 @@ void TouchscreenInput::tick(Player *a2) {
       v10 = v7;
     }
     v11 = Multitouch::_pointers[v10].getY();
+    pointerId = this->touchAreaModel.getPointerId(v9, v11, v7);
+    bool isRidingBoat = a2 && a2->isRiding() && a2->ridingAt && a2->ridingAt->getEntityTypeId() == 90;
     if (this->field_1C.isInside((float)v9, (float)v11) && this->field_41 &&
-        !this->idkWhatIsThis2) {
+        !this->idkWhatIsThis2 && !isRidingBoat) {
       v5 = 1;
       v20 = (float)v11 - this->field_1C.centerY();
       v21 = this->field_1C.centerX();
@@ -312,7 +315,6 @@ void TouchscreenInput::tick(Player *a2) {
       this->forwardInput = Mth::sin(v23);
       this->strafeInput = Mth::cos(v23);
     }
-    pointerId = this->touchAreaModel.getPointerId(v9, v11, v7);
     v13 = pointerId;
     if (pointerId > 99) {
       if (v7 < 0) {
@@ -360,11 +362,11 @@ void TouchscreenInput::tick(Player *a2) {
           }
         }
       LABEL_35:
-        if (!this->idkWhatIsThis2) {
+        if (!this->idkWhatIsThis2 && !isRidingBoat) {
           v5 = 1;
         }
         v13 = 100;
-        this->forwardInput = this->forwardInput + 1.0;
+        this->forwardInput = isRidingBoat ? 1.0f : (this->forwardInput + 1.0f);
         goto LABEL_40;
       }
       if (pointerId == 101) {

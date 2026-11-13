@@ -256,7 +256,7 @@ void ItemRenderer::renderGuiItemCorrect(Font* a1, Textures* a2, const ItemInstan
 	TextureUVCoordinateSet* icon; // r0
 	if(a3) {
 		if(a3->tileClass && (v9 = a3->tileClass->getRenderShape(), TileRenderer::canRender(v9))) {
-			a2->loadAndBindTexture("terrain.png");
+			a2->loadAndBindTexture("terrain-atlas.tga");
 			glPushMatrix();
 			glTranslatef((float)(a4 - 2), (float)(a5 + 3), -8.0);
 			glScalef(10.0, 10.0, 10.0);
@@ -267,7 +267,7 @@ void ItemRenderer::renderGuiItemCorrect(Font* a1, Textures* a2, const ItemInstan
 			ItemRenderer::tileRenderer->renderGuiTile(a3->tileClass, a3->getAuxValue(), 1.0, 1.0);
 			glPopMatrix();
 		} else if(a3->itemClass) {
-			a2->loadAndBindTexture(a3->tileClass ? "terrain.png" : "gui/items.png");
+			a2->loadAndBindTexture(a3->tileClass ? "terrain-atlas.tga" : "gui/items.png");
 			icon = a3->getIcon(0, 0);
 			if (icon) {
 				ItemRenderer::blit((float)a4, (float)a5, icon->minX * icon->width, icon->minY * icon->height, 16.0, 16.0);

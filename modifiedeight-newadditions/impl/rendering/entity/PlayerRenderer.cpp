@@ -664,7 +664,7 @@ void PlayerRenderer::additionalRendering(Mob* a2, float a3) {
 	glTranslatef(0.0f, 1.0f, zOff);
 
 	if (player->isSneaking()) {
-		glTranslatef(0.0f, 1.5f, 0.0f);
+		glTranslatef(0.0f, 3.2f, 0.0f);
 	}
 
 	float pt = a3;

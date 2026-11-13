@@ -1128,13 +1128,6 @@ void GameRenderer::setupGuiScreen(bool_t a2) {
 	glMatrixMode(0x1700u);
 	glLoadIdentity();
 	glTranslatef(0.0, 0.0, -2000.0);
-	glDisable(GL_LIGHTING);
-	glDisable(GL_FOG);
-	glDisable(GL_CULL_FACE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_TEXTURE_2D);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 static int32_t _D67AD634 = -1;
 void GameRenderer::tick(int32_t a2, int32_t a3) {

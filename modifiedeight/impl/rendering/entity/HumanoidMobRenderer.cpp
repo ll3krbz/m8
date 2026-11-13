@@ -29,6 +29,7 @@ void HumanoidMobRenderer::render(Entity* a2_, float a3, float a4, float a5, floa
 	this->hmodel->field_31A = a2->isSneaking();
 	MobRenderer::render(a2, a3, a4, a5, a6, a7);
 	this->hmodel->field_319 = 0;
+	this->hmodel->field_31A = 0;
 }
 void HumanoidMobRenderer::additionalRendering(Mob* a2, float a3) {
 	ItemInstance* v5; // r0

@@ -12,7 +12,10 @@ struct Turtle: Animal {
 	virtual const char_t* getAmbientSound();
 	virtual std::string getHurtSound();
 	virtual std::string getDeathSound();
+	virtual void updateAi();
 	virtual void aiStep();
+	virtual void travel(float, float);
+	virtual void tick();
 	virtual bool_t canSpawn();
 	virtual bool_t isWaterMob();
 	virtual Mob* getBreedOffspring(Animal*);

@@ -64,6 +64,7 @@ void HumanoidMobRenderer::render(Entity* a2_, float a3, float a4, float a5, floa
 		this->hmodel->headModel.field_1D = 1;
 	}
 	this->hmodel->field_319 = 0;
+	this->hmodel->field_31A = 0;
 }
 void HumanoidMobRenderer::additionalRendering(Mob* a2, float a3) {
 	if (a2 && a2->isPlayer()) {

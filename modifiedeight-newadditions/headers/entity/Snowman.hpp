@@ -25,4 +25,6 @@ struct Snowman: PathfinderMob {
 
 	bool_t hasPumpkin() const;
 	void setPumpkin(bool_t);
+	bool_t hasLitPumpkin() const;
+	void setLitPumpkin(bool_t);
 };

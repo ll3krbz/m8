@@ -68,11 +68,12 @@ RenderCall* ItemInHandRenderer::rebuildItem(struct Mob* a2, ItemInstance& a3) {
 			Tesselator::instance.voidBeginAndEndCalls(1);
 			this->tileRenderer.renderTile(a3.tileClass, a3.getAuxValue(), 1);
 			Tesselator::instance.voidBeginAndEndCalls(0);
+			v7->field_0 = a3.getId();
 			v7->field_4 = Tesselator::instance.end();
 			v7->field_2C = "terrain-atlas.tga";
 			v7->field_30 = 0;
 			int v24 = a3.tileClass->getRenderLayer();
-			bool_t isLight = (a3.itemClass ? a3.itemClass->isEmissive(a3.getAuxValue()) : 0) || a3.getId() == 50 || a3.getId() == 89 || a3.getId() == 91 || a3.getId() == 327;
+			bool_t isLight = (a3.itemClass ? a3.itemClass->isEmissive(a3.getAuxValue()) : 0) || a3.getId() == 50 || a3.getId() == 89 || a3.getId() == 327;
 			if(v24 != 1) {
 				if(!a3.tileClass->goodGraphics) {
 					v7->field_31 = 0;
@@ -182,7 +183,7 @@ RenderCall* ItemInHandRenderer::rebuildItem(struct Mob* a2, ItemInstance& a3) {
 
 	TextureTesselator textes(td, (int)v16, (int)v19, v17, v20, Vec3(0, 0, 0), Color4::BLACK, colorTint);
 	v7->field_4 = textes.tesselate();
-	v7->field_32 = (a3.itemClass ? a3.itemClass->isEmissive(a3.getAuxValue()) : 0) || a3.getId() == 50 || a3.getId() == 89 || a3.getId() == 91 || a3.getId() == 327;
+	v7->field_32 = (a3.itemClass ? a3.itemClass->isEmissive(a3.getAuxValue()) : 0) || a3.getId() == 50 || a3.getId() == 89 || a3.getId() == 327;
 	return v7;
 }
 void ItemInHandRenderer::renderFirstPersonLegs(float a2) {
@@ -501,9 +502,9 @@ LABEL_22:
 	}
 	{
 		int heldId = this->field_4.getId();
-		if (heldId == 50 || heldId == 89 || heldId == 91 || heldId == 327) {
-			GLfloat lpos[] = { 0.2f, 0.2f, -0.4f, 1.0f };
-			GLfloat ldiff[] = { 1.2f, heldId == 89 ? 1.15f : 0.95f, heldId == 89 ? 0.95f : 0.6f, 1.0f };
+		if (heldId == 50 || heldId == 89 || heldId == 327) {
+			GLfloat lpos[] = { 0.2f, 0.2f, -0.4f, 0.0f };
+			GLfloat ldiff[] = { 1.0f, heldId == 89 ? 0.98f : 0.9f, heldId == 89 ? 0.9f : 0.6f, 1.0f };
 			GLfloat lamb[] = { 0.8f, heldId == 89 ? 0.75f : 0.65f, heldId == 89 ? 0.65f : 0.4f, 1.0f };
 			glLightfv(0x4000, GL_POSITION, lpos);
 			glLightfv(0x4000, GL_DIFFUSE, ldiff);

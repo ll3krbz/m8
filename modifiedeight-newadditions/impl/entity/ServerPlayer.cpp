@@ -64,12 +64,12 @@ void ServerPlayer::setContainerMenu(BaseContainerMenu* a2) {
 }
 void ServerPlayer::setPlayerInput(float a2, float a3, bool_t a4, bool_t a5) {
 	if(this->ridingAt) {
-		if(a2 >= -1.0 && a2 <= 1.0) {
-			this->moveStrafe = a2;
-		}
-		if(a3 >= -1.0 && a3 <= 1.0) {
-			this->moveForward = a3;
-		}
+		if(a2 < -1.0f) a2 = -1.0f;
+		if(a2 > 1.0f) a2 = 1.0f;
+		if(a3 < -1.0f) a3 = -1.0f;
+		if(a3 > 1.0f) a3 = 1.0f;
+		this->moveForward = a2;
+		this->moveStrafe = a3;
 		this->isJumping = a4;
 	}
 	this->setSneaking(a5);

@@ -168,7 +168,7 @@ void LocalPlayer::releaseAllKeys() {
 void LocalPlayer::respawn() { this->minecraft->respawnPlayer(); }
 void LocalPlayer::sendPosition() {
   MovePlayerPacket v18(this->entityId, this->posX,
-                       this->posY - this->ridingHeight, this->posZ, this->pitch,
+                       this->boundingBox.minY, this->posZ, this->pitch,
                        this->yaw, this->headYaw);
 
   this->minecraft->rakNetInstance->send(v18);
@@ -693,12 +693,16 @@ float LocalPlayer::getWalkingSpeedModifier() {
 }
 
 void LocalPlayer::travel(float a2, float a3) {
+  if (this->abilities.flying) {
+    Player::travel(a2, a3);
+    return;
+  }
   bool inWater = this->isInWater() || this->isUnderLiquid(Material::water);
   if (!inWater && this->level) {
     int px = (int)floorf(this->posX);
     int pz = (int)floorf(this->posZ);
-    for (float yo = -0.5f; yo <= 1.4f; yo += 0.35f) {
-      int py = (int)floorf(this->posY + yo);
+    for (float y = this->boundingBox.minY + 0.1f; y <= this->boundingBox.maxY - 0.15f; y += 0.35f) {
+      int py = (int)floorf(y);
       if (py >= 0 && py < 128) {
         int tile = this->level->getTile(px, py, pz);
         Material *mat = this->level->getMaterial(px, py, pz);
@@ -712,19 +716,44 @@ void LocalPlayer::travel(float a2, float a3) {
   }
   if (inWater) {
     this->onGround = false;
-    float speed = this->isSprinting ? 0.07f : 0.04f;
     float pitchRad = this->pitch * 0.0174532925f;
     float lookY = -sinf(pitchRad);
-    if (a3 > 0.0f) {
-      this->motionY += lookY * (this->isSprinting ? 0.05f : 0.035f);
+    float horizCos = cosf(pitchRad);
+    if (horizCos < 0.0f) horizCos = -horizCos;
+    float baseSpeed = this->isSprinting ? 0.068f : 0.042f;
+    float horizSpeed = baseSpeed * (0.45f + 0.55f * horizCos);
+    bool hasForward = (a3 > 0.05f || a3 < -0.05f);
+    bool hasInput = hasForward || (a2 > 0.05f || a2 < -0.05f);
+    if (hasForward) {
+      float swimPower = this->isSprinting ? 0.054f : 0.036f;
+      this->motionY += a3 * lookY * swimPower;
     }
-    this->moveRelative(a2, a3, speed);
+    if (this->isSneaking()) {
+      this->motionY -= 0.03f;
+    }
+    this->moveRelative(a2, a3, horizSpeed);
     this->move(this->motionX, this->motionY, this->motionZ);
-    this->motionX *= 0.8f;
-    this->motionY = (this->motionY * 0.8f) - 0.02f;
-    this->motionZ *= 0.8f;
-    if (this->isCollidedHorizontally) {
-      this->motionY = 0.35f;
+    this->motionX *= 0.88f;
+    this->motionZ *= 0.88f;
+    if (hasInput || this->isSneaking()) {
+      this->motionY *= 0.88f;
+    } else {
+      this->motionY = (this->motionY * 0.86f) - 0.005f;
+    }
+    if (this->isCollidedHorizontally && !this->isSneaking() && a3 > 0.05f && this->level) {
+      int px = (int)floorf(this->posX);
+      int pz = (int)floorf(this->posZ);
+      int headY = (int)floorf(this->boundingBox.maxY + 0.1f);
+      bool waterAbove = false;
+      if (headY >= 0 && headY < 128) {
+        int htile = this->level->getTile(px, headY, pz);
+        Material *hmat = this->level->getMaterial(px, headY, pz);
+        waterAbove = (htile == Tile::water->blockID || htile == Tile::calmWater->blockID ||
+                      (hmat && hmat == Material::water));
+      }
+      if (!waterAbove && this->motionY < 0.22f) {
+        this->motionY = 0.22f;
+      }
     }
   } else {
     Player::travel(a2, a3);

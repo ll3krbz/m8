@@ -58,6 +58,11 @@ float Mth::random(void){
 uint32_t Mth::random(int32_t bound){
 	return Mth::_random.genrand_int32() % bound;
 }
+float Mth::clamp(float v, float lo, float hi){
+	if(v < lo) return lo;
+	if(v > hi) return hi;
+	return v;
+}
 float Mth::clampRotate(float f, float f1, float f2){
 	float f3, f4, f5;
 

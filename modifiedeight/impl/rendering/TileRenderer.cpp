@@ -18,6 +18,7 @@
 #include <tile/material/Material.hpp>
 #include <rendering/EntityTileRenderer.hpp>
 #include <tile/entity/ChestTileEntity.hpp>
+#include <tile/PumpkinTile.hpp>
 
 void TileRenderer::_randomizeFaceDirection(Tile* a2, int32_t a3, float a4, float a5, float a6) {
 	int32_t* v6; // r2
@@ -1004,17 +1005,32 @@ void TileRenderer::renderTile(Tile* tile, int32_t a3, bool_t a4) {
 			tile->updateDefaultShape();
 			Tesselator::instance.addOffset(-0.5, -0.5, -0.5);
 			Tesselator::instance.begin(24);
+			Tesselator::instance.color(0.5f, 0.5f, 0.5f, 1.0f);
 			Tesselator::instance.normal(Vec3::NEG_UNIT_Y);
 			v8 = tile->getCarriedTexture(0, a3);
 			this->renderFaceDown(tile, 0.0, 0.0, 0.0, *v8);
+			Tesselator::instance.color(1.0f, 1.0f, 1.0f, 1.0f);
+			Tesselator::instance.normal(Vec3::UNIT_Y);
 			v9 = tile->getCarriedTexture(1, a3);
 			this->renderFaceUp(tile, 0.0, 0.0, 0.0, *v9);
+			Tesselator::instance.color(0.8f, 0.8f, 0.8f, 1.0f);
+			Tesselator::instance.normal(Vec3::NEG_UNIT_Z);
 			v10 = tile->getCarriedTexture(2, a3);
 			this->renderNorth(tile, 0.0, 0.0, 0.0, *v10);
+			if (tile == Tile::litPumpkin) {
+				Tesselator::instance.color(1.0f, 1.0f, 1.0f, 1.0f);
+			} else {
+				Tesselator::instance.color(0.8f, 0.8f, 0.8f, 1.0f);
+			}
+			Tesselator::instance.normal(Vec3::UNIT_Z);
 			v46 = *tile->getCarriedTexture(3, a3);
 			this->renderSouth(tile, 0.0, 0.0, 0.0, v46);
+			Tesselator::instance.color(0.6f, 0.6f, 0.6f, 1.0f);
+			Tesselator::instance.normal(Vec3::NEG_UNIT_X);
 			v11 = tile->getCarriedTexture(4, a3);
 			this->renderWest(tile, 0.0, 0.0, 0.0, *v11);
+			Tesselator::instance.color(0.6f, 0.6f, 0.6f, 1.0f);
+			Tesselator::instance.normal(Vec3::UNIT_X);
 			v12 = tile->getCarriedTexture(5, a3);
 			this->renderEast(tile, 0.0, 0.0, 0.0, *v12);
 			Tesselator::instance.draw(0);
@@ -1586,8 +1602,8 @@ bool_t TileRenderer::tesselateBlockInWorld(Tile* tile, int32_t x, int32_t y, int
 			v18 = v16;
 		}
 		v15 = 1;
-		Tesselator::instance.color(v14 * (float)(v18 * 0.8), v13 * (float)(v18 * 0.8), v12 * (float)(v18 * 0.8));
 		v19 = tile->getTexture(this->levelSource, x, y, z, 2);
+		Tesselator::instance.color(v14 * (float)(v18 * 0.8), v13 * (float)(v18 * 0.8), v12 * (float)(v18 * 0.8));
 		this->renderNorth(tile, (float)x, (float)y, (float)z, *v19);
 	}
 	if(this->disableCulling || tile->shouldRenderFace(this->levelSource, x, y, z + 1, 3)) {
@@ -1599,8 +1615,8 @@ bool_t TileRenderer::tesselateBlockInWorld(Tile* tile, int32_t x, int32_t y, int
 			v20 = v16;
 		}
 		v15 = 1;
-		Tesselator::instance.color(v14 * (float)(v20 * 0.8), v13 * (float)(v20 * 0.8), v12 * (float)(v20 * 0.8));
 		v29 = *tile->getTexture(this->levelSource, x, y, z, 3);
+		Tesselator::instance.color(v14 * (float)(v20 * 0.8), v13 * (float)(v20 * 0.8), v12 * (float)(v20 * 0.8));
 		this->renderSouth(tile, (float)x, (float)y, (float)z, v29);
 	}
 	if(this->disableCulling || tile->shouldRenderFace(this->levelSource, x - 1, y, z, 4)) {
@@ -1612,8 +1628,8 @@ bool_t TileRenderer::tesselateBlockInWorld(Tile* tile, int32_t x, int32_t y, int
 			v21 = v16;
 		}
 		v15 = 1;
-		Tesselator::instance.color(v14 * (float)(v21 * 0.6), v13 * (float)(v21 * 0.6), v12 * (float)(v21 * 0.6));
 		v22 = tile->getTexture(this->levelSource, x, y, z, 4);
+		Tesselator::instance.color(v14 * (float)(v21 * 0.6), v13 * (float)(v21 * 0.6), v12 * (float)(v21 * 0.6));
 		this->renderWest(tile, (float)x, (float)y, (float)z, *v22);
 	}
 	if(this->disableCulling || tile->shouldRenderFace(this->levelSource, x + 1, y, z, 5)) {
@@ -1626,8 +1642,8 @@ bool_t TileRenderer::tesselateBlockInWorld(Tile* tile, int32_t x, int32_t y, int
 			}
 		}
 		v15 = 1;
-		Tesselator::instance.color(v14 * (float)(v23 * 0.6), v13 * (float)(v23 * 0.6), v12 * (float)(v23 * 0.6));
 		v24 = tile->getTexture(this->levelSource, x, y, z, 5);
+		Tesselator::instance.color(v14 * (float)(v23 * 0.6), v13 * (float)(v23 * 0.6), v12 * (float)(v23 * 0.6));
 		this->renderEast(tile, (float)x, (float)y, (float)z, *v24);
 	}
 	return v15;

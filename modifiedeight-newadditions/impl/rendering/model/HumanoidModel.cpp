@@ -185,22 +185,27 @@ void HumanoidModel::setupAnim(float a2, float a3, float a4, float a5, float a6, 
 		this->rightArmModel.zRotAngle = Mth::sin(v19 * 3.1416) * -0.4;
 	}
 	if(this->field_31A) {
-		v24 = this->rightArmModel.xRotAngle + 0.4;
-		this->bodyModel.xRotAngle = 0.5;
-		this->rightLegModel.zOffset = 4.0;
-		this->leftLegModel.zOffset = 4.0;
-		this->rightLegModel.yOffset = 9.0;
-		this->leftLegModel.yOffset = 9.0;
-		this->headModel.yOffset = 1.0;
-		this->rightArmModel.xRotAngle = v24;
-		this->leftArmModel.xRotAngle = this->leftArmModel.xRotAngle + 0.4;
+		this->bodyModel.xRotAngle = 0.5f;
+		this->bodyModel.yOffset = 3.2f;
+		this->rightArmModel.xRotAngle = this->rightArmModel.xRotAngle + 0.4f;
+		this->leftArmModel.xRotAngle = this->leftArmModel.xRotAngle + 0.4f;
+		this->rightArmModel.yOffset = 5.2f;
+		this->leftArmModel.yOffset = 5.2f;
+		this->rightLegModel.zOffset = 4.0f;
+		this->leftLegModel.zOffset = 4.0f;
+		this->rightLegModel.yOffset = 12.2f;
+		this->leftLegModel.yOffset = 12.2f;
+		this->headModel.yOffset = 4.2f;
 	} else {
-		this->bodyModel.xRotAngle = 0.0;
-		this->rightLegModel.zOffset = 0.0;
-		this->leftLegModel.zOffset = 0.0;
-		this->headModel.yOffset = 0.0;
-		this->rightLegModel.yOffset = 12.0;
-		this->leftLegModel.yOffset = 12.0;
+		this->bodyModel.xRotAngle = 0.0f;
+		this->bodyModel.yOffset = 0.0f;
+		this->rightArmModel.yOffset = 2.0f;
+		this->leftArmModel.yOffset = 2.0f;
+		this->rightLegModel.zOffset = 0.0f;
+		this->leftLegModel.zOffset = 0.0f;
+		this->headModel.yOffset = 0.0f;
+		this->rightLegModel.yOffset = 12.0f;
+		this->leftLegModel.yOffset = 12.0f;
 	}
 	v25 = (float)(Mth::cos(a4 * 0.09) * 0.05) + 0.05;
 	v26 = Mth::sin(a4 * 0.067);

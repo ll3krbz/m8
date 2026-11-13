@@ -12,9 +12,19 @@ PumpkinTile::PumpkinTile(int32_t a2, bool_t lit)
 	this->field_84 = *texItem->getUV(0);
 	this->field_9C = *texItem->getUV(1);
 	this->field_B4 = *texItem->getUV(this->field_80 ? 3 : 2);
+	this->textureUV = this->field_B4;
 }
 
 PumpkinTile::~PumpkinTile() {
+}
+TextureUVCoordinateSet* PumpkinTile::getTexture(int32_t a2) {
+	if(a2 == 1 || !a2) {
+		return &this->field_84;
+	}
+	if(a2 == 3) {
+		return &this->field_B4;
+	}
+	return &this->field_9C;
 }
 TextureUVCoordinateSet* PumpkinTile::getTexture(int32_t a2, int32_t a3) {
 	bool_t v4; // zf
@@ -68,6 +78,7 @@ void PumpkinTile::onPlace(Level* level, int32_t x, int32_t y, int32_t z) {
 
 		if (!level->isClientMaybe) {
 			Snowman* golem = new Snowman(level);
+			golem->setLitPumpkin(this->field_80);
 			golem->moveTo((float)x + 0.5f, (float)(y - 2), (float)z + 0.5f, 0.0f, 0.0f);
 			level->addEntity(golem);
 		}

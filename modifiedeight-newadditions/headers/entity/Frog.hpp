@@ -12,6 +12,8 @@ struct Frog: Animal {
 	virtual std::string getHurtSound();
 	virtual std::string getDeathSound();
 	virtual int32_t getAmbientSoundInterval();
+	virtual void updateAi();
+	virtual void aiStep();
 	virtual bool_t canSpawn();
 	virtual bool_t removeWhenFarAway();
 	virtual int32_t getMaxSpawnClusterSize();

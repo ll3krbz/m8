@@ -605,7 +605,11 @@ void Entity::move(float dx, float dy, float dz) {
 			this->motionX = 0.0;
 		}
 		if(movY != v36) {
-			this->motionY = 0.0;
+			if(movY < 0.0f && this->motionY > 0.0f) {
+				this->onGround = 0;
+			} else {
+				this->motionY = 0.0;
+			}
 		}
 		field_110 = this->field_110;
 		v82 = this->posX;
@@ -1496,39 +1500,53 @@ void Entity::outOfWorld() {
 	this->remove();
 }
 void Entity::checkFallDamage(float fdChange, bool_t a3) {
-	int32_t x;		// r6
-	int32_t y;		// r7
-	int32_t z;		// r5
-	int32_t tileID; // r0
-
-	if(a3) {
-		if(this->fallDistance <= 0.0) {
-			return;
+	if(!a3) {
+		if(fdChange < 0.0) {
+			this->fallDistance = this->fallDistance - fdChange;
 		}
-		if(!this->isMob()) {
-			goto NOT_MOB_FORCE_JUMP;
-		}
-		x = Mth::floor(this->posX);
-		y = Mth::floor((float)(this->posY - 0.2) - this->ridingHeight);
-		z = Mth::floor(this->posZ);
-		tileID = this->level->getTile(x, y, z);
-		if(!tileID) {
-			if(this->level->getTile(x, y - 1, z) != Tile::fence->blockID) {
-NOT_MOB_FORCE_JUMP:
-				this->causeFallDamage(this->fallDistance);
-				this->fallDistance = 0.0;
-				return;
-			}
-			tileID = this->level->getTile(x, y - 1, z);
-		}
-		if(tileID > 0) {
-			Tile::tiles[tileID]->fallOn(this->level, x, y, z, this, this->fallDistance);
-		}
-		goto NOT_MOB_FORCE_JUMP;
+		return;
 	}
-	if(fdChange < 0.0) {
+	if(fdChange < 0.0f) {
 		this->fallDistance = this->fallDistance - fdChange;
 	}
+	if(this->fallDistance <= 0.0f && this->motionY >= -0.16f) {
+		return;
+	}
+	if(this->isMob()) {
+		int32_t x = Mth::floor(this->posX);
+		int32_t y = Mth::floor((float)(this->posY - 0.2) - this->ridingHeight);
+		int32_t z = Mth::floor(this->posZ);
+		int32_t tileID = this->level->getTile(x, y, z);
+		if(!tileID) {
+			int32_t minX = Mth::floor(this->boundingBox.minX + 0.001f);
+			int32_t maxX = Mth::floor(this->boundingBox.maxX - 0.001f);
+			int32_t minZ = Mth::floor(this->boundingBox.minZ + 0.001f);
+			int32_t maxZ = Mth::floor(this->boundingBox.maxZ - 0.001f);
+			for(int32_t sx = minX; sx <= maxX; ++sx) {
+				for(int32_t sz = minZ; sz <= maxZ; ++sz) {
+					int32_t st = this->level->getTile(sx, y, sz);
+					if(st > 0) {
+						tileID = st;
+						x = sx;
+						z = sz;
+						if(Tile::slimeBlock && st == Tile::slimeBlock->blockID) {
+							sx = maxX + 1;
+							break;
+						}
+					}
+				}
+			}
+			if(!tileID && this->level->getTile(x, y - 1, z) == Tile::fence->blockID) {
+				tileID = this->level->getTile(x, y - 1, z);
+				y = y - 1;
+			}
+		}
+		if(tileID > 0 && Tile::tiles[tileID]) {
+			Tile::tiles[tileID]->fallOn(this->level, x, y, z, this, this->fallDistance);
+		}
+	}
+	this->causeFallDamage(this->fallDistance);
+	this->fallDistance = 0.0;
 }
 void Entity::causeFallDamage(float a2) {
 	if(this->rider) rider->causeFallDamage(a2);

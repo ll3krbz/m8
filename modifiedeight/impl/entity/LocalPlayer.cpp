@@ -164,7 +164,7 @@ void LocalPlayer::releaseAllKeys() {
 void LocalPlayer::respawn() { this->minecraft->respawnPlayer(); }
 void LocalPlayer::sendPosition() {
   MovePlayerPacket v18(this->entityId, this->posX,
-                       this->posY - this->ridingHeight, this->posZ, this->pitch,
+                       this->boundingBox.minY, this->posZ, this->pitch,
                        this->yaw, this->headYaw);
 
   this->minecraft->rakNetInstance->send(v18);

@@ -406,6 +406,20 @@ void Gui::render(float a2, bool_t a3, int32_t a4, int32_t a5) {
   if (minecraftInst->level) {
     if (minecraftInst->player) {
       DisableState v25(0xB71);
+      struct HudStateGuard {
+        GLboolean fog;
+        GLboolean light;
+        HudStateGuard() {
+          fog = glIsEnabled(GL_FOG);
+          light = glIsEnabled(GL_LIGHTING);
+          glDisable(GL_FOG);
+          glDisable(GL_LIGHTING);
+        }
+        ~HudStateGuard() {
+          if (fog) glEnable(GL_FOG);
+          if (light) glEnable(GL_LIGHTING);
+        }
+      } hudStateGuard;
       v8 = this->minecraftInst;
       font = v8->font;
       v10 = v8->useTouchscreen();
@@ -453,6 +467,13 @@ void Gui::render(float a2, bool_t a3, int32_t a4, int32_t a5) {
         this->renderOnSelectItemNameText(v15, font, v16 - 19);
 
         if (!this->minecraftInst->options.hideGUI) {
+          glEnable(GL_TEXTURE_2D);
+          glEnable(GL_BLEND);
+          glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+          glDisable(GL_DEPTH_TEST);
+          glDisable(GL_FOG);
+          glDisable(GL_LIGHTING);
+          glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
           float startY = 2.0f;
           if (this->minecraftInst->gameMode->isSurvivalType()) {
             startY = 14.0f;

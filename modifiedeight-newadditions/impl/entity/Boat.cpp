@@ -162,18 +162,20 @@ void Boat::tick() {
 		if (p->isSneaking()) {
 			p->ride(0);
 		} else {
-			if (p->moveStrafe > 0.0f) this->yaw -= 3.0f;
-			else if (p->moveStrafe < 0.0f) this->yaw += 3.0f;
+			if (p->moveStrafe > 0.25f) this->yaw -= 3.0f;
+			else if (p->moveStrafe < -0.25f) this->yaw += 3.0f;
 			else this->yaw = p->yaw;
 			float forward = p->moveForward;
-			if (forward != 0.0f) {
+			if (forward > 1.0f) forward = 1.0f;
+			if (forward < -1.0f) forward = -1.0f;
+			if (fabsf(forward) > 0.05f) {
 				float speed = inWater ? 0.08f : 0.015f;
 				float rad = (this->yaw * 3.14159265f) / 180.0f;
 				this->motionX += -std::sin(rad) * speed * forward;
 				this->motionZ += std::cos(rad) * speed * forward;
 				this->rowingTime[0] += 0.25f;
 				this->rowingTime[1] += 0.25f;
-			} else if (p->moveStrafe != 0.0f) {
+			} else if (fabsf(p->moveStrafe) > 0.25f) {
 				this->rowingTime[0] += 0.15f;
 				this->rowingTime[1] += 0.15f;
 			}

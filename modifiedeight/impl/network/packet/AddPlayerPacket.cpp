@@ -15,7 +15,7 @@ AddPlayerPacket::AddPlayerPacket(const Player* a2) {
 	this->field_1C = a2->field_CA0;
 	this->eid = a2->entityId;
 	this->x = a2->posX;
-	this->y = a2->posY - a2->ridingHeight;
+	this->y = a2->boundingBox.minY;
 	this->z = a2->posZ;
 	this->pitch = a2->pitch;
 	this->yaw = a2->yaw;

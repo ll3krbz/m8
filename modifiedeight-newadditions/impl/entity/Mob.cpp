@@ -409,7 +409,7 @@ void Mob::tick() {
 	while(this->yaw - this->prevYaw < -180.0) this->prevYaw -= 360.0;
 	while(this->yaw - this->prevYaw >= 180.0) this->prevYaw += 360.0;
 
-	while(this->field_124 - this->field_128 < 180.0) this->field_128 -= 360.0;
+	while(this->field_124 - this->field_128 < -180.0) this->field_128 -= 360.0;
 	while(this->field_124 - this->field_128 >= 180.0) this->field_128 += 360.0;
 
 	while(this->pitch - this->prevPitch < -180.0) this->prevPitch -= 360.0;
@@ -879,17 +879,6 @@ bool_t Mob::onLadder() {
 				int32_t tid = this->level->getTile(x, y, z);
 				if (tid == Tile::ladder->blockID || (Tile::vine && tid == Tile::vine->blockID)) {
 					return 1;
-				}
-				if (Tile::slimeBlock && tid == Tile::slimeBlock->blockID) {
-					return 1;
-				}
-				if (Tile::mixedSlab && tid == Tile::mixedSlab->blockID && Tile::slimeBlock) {
-					MixedSlabTileEntity* te = (MixedSlabTileEntity*)this->level->getTileEntity(x, y, z);
-					if (te && (te->mode == 1 || te->mode == 2)) {
-						if (te->bottomTileId == Tile::slimeBlock->blockID || te->topTileId == Tile::slimeBlock->blockID) {
-							return 1;
-						}
-					}
 				}
 			}
 		}

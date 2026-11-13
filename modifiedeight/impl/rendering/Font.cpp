@@ -9,6 +9,7 @@
 #include <string.h>
 #include <cpputils.hpp>
 #include <util/Util.hpp>
+#include <unigl.h>
 
 Font::Font(AppPlatform* platform, Options* options, const std::string& string, Textures* textures){
 	this->field_8 = 0;
@@ -34,12 +35,12 @@ float Font::buildChar(int32_t a2, float a3, float a4, bool_t mb){
 
 	if(a2 == 32) return 4.0f;
 	if(mb || a2 > 255){
-		v6 = this->glyphSizes[a2];
+		v6 = this->glyphSizes ? this->glyphSizes[a2 & 0xFFFF] : 0;
 		v7 = (float)(v6 >> 4);
 		v8 = ((float)((v6&0xf) + 1) - v7) * 0.5f + 1.0;
 	}else{
 		v7 = 0;
-		v8 = this->charLength[a2];
+		v8 = this->charLength[a2 & 0xFF];
 	}
 	v9 = a3-v7;
 	v10 = a2&0xf0;
@@ -57,9 +58,9 @@ float Font::buildChar(int32_t a2, float a3, float a4, bool_t mb){
 
 int32_t Font::charWidth(int32_t a2, bool_t a3){
 	if(a2 == ' ') return 4;
-	if(a2 <= 255 && !a3) return this->charWidths[a2];
+	if(a2 >= 0 && a2 <= 255 && !a3) return this->charWidths[a2];
 	if(this->glyphSizes){
-		int32_t r = this->glyphSizes[a2];
+		int32_t r = this->glyphSizes[a2 & 0xFFFF];
 		if(r){
 			return (int32_t)((r&0xf)+1 - (r>>4))/2 + 1;
 		}
@@ -114,7 +115,7 @@ void Font::drawSlow(const char_t* s, int32_t len, float x, float y, int32_t colo
 
 	int32_t v24;
 
-	if(!s) return;
+	if(!s || len <= 0) return;
 
 	if(shadow) col = (color & 0xff000000) + ((color & 0xfcfcfc) >> 2);
 	ss = (const uint8_t*) s;
@@ -322,7 +323,6 @@ void Font::setUnicodeTexture(int32_t g){
 	this->field_1820.textures->loadAndBindTexture(v5);
 }
 int32_t Font::width(const std::string& s){
-	bool_t hasUnicode = this->containsUnicodeChar(s);
 	int32_t v6, v10;
 	int32_t v13;
 	int32_t len = s.length();
@@ -336,7 +336,7 @@ int32_t Font::width(const std::string& s){
 		if(v11 <= 0) break;
 		data += v11;
 		len -= v11;
-		int32_t v9 = this->charWidth(v13, hasUnicode);
+		int32_t v9 = this->charWidth(v13, false);
 		if(v13 == 10){
 			if(v6 < v10) v6 = v10;
 			goto LABEL_5;

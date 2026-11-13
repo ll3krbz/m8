@@ -2,6 +2,8 @@
 #include <level/Level.hpp>
 #include <level/biome/Biome.hpp>
 #include <tile/Tile.hpp>
+#include <tile/material/Material.hpp>
+#include <math/Mth.hpp>
 #include <math.h>
 
 Frog::Frog(Level* level)
@@ -45,6 +47,28 @@ std::string Frog::getHurtSound() {
 
 std::string Frog::getDeathSound() {
 	return "mob.frog.death";
+}
+
+void Frog::updateAi() {
+	PathfinderMob::updateAi();
+	if (this->isInWater() && !this->isCollidedHorizontally) {
+		this->isJumping = 0;
+	}
+}
+
+void Frog::aiStep() {
+	Animal::aiStep();
+	if (this->isInWater() && !this->isCollidedHorizontally && this->level) {
+		int32_t bx = Mth::floor(this->posX);
+		int32_t byAbove = Mth::floor(this->posY + 0.55f);
+		int32_t bz = Mth::floor(this->posZ);
+		bool_t waterAbove = (byAbove > 0 && byAbove < 127) && (this->level->getMaterial(bx, byAbove, bz) == Material::water);
+		if (waterAbove) {
+			this->motionY += (0.03f - this->motionY) * 0.25f;
+		} else {
+			this->motionY *= 0.6f;
+		}
+	}
 }
 
 bool_t Frog::canSpawn() {

@@ -5,6 +5,9 @@ struct AbstractFish: WaterAnimal {
 	float fishAngle;
 	float targetAngle;
 	float swimSpeed;
+	float targetSwimSpeed;
+	float targetVy;
+	int32_t swimTimer;
 	int32_t leaderEntityId;
 
 	AbstractFish(Level*);

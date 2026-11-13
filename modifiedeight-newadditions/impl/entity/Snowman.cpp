@@ -51,16 +51,33 @@ void Snowman::setPumpkin(bool_t has) {
 	}
 }
 
+bool_t Snowman::hasLitPumpkin() const {
+	return (const_cast<SynchedEntityData&>(this->synchedEntityData).getByte(16) & 32) != 0;
+}
+
+void Snowman::setLitPumpkin(bool_t lit) {
+	int8_t b = this->synchedEntityData.getByte(16);
+	if (lit) {
+		this->synchedEntityData.set<int8_t>(16, (int8_t)(b | 32));
+	} else {
+		this->synchedEntityData.set<int8_t>(16, (int8_t)(b & ~32));
+	}
+}
+
 void Snowman::readAdditionalSaveData(CompoundTag* tag) {
 	PathfinderMob::readAdditionalSaveData(tag);
 	if (tag->contains("Pumpkin")) {
 		this->setPumpkin(tag->getByte("Pumpkin") != 0);
+	}
+	if (tag->contains("LitPumpkin")) {
+		this->setLitPumpkin(tag->getByte("LitPumpkin") != 0);
 	}
 }
 
 void Snowman::addAdditonalSaveData(CompoundTag* tag) {
 	PathfinderMob::addAdditonalSaveData(tag);
 	tag->putBoolean("Pumpkin", this->hasPumpkin());
+	tag->putBoolean("LitPumpkin", this->hasLitPumpkin());
 }
 
 bool_t Snowman::interactWithPlayer(Player* player) {
@@ -68,8 +85,10 @@ bool_t Snowman::interactWithPlayer(Player* player) {
 	ItemInstance* sel = player->inventory->getSelected();
 	if (sel && sel->itemClass == Item::shears && this->hasPumpkin()) {
 		if (this->level && !this->level->isClientMaybe) {
+			int32_t dropId = this->hasLitPumpkin() ? Tile::litPumpkin->blockID : Tile::pumpkin->blockID;
 			this->setPumpkin(false);
-			Entity* v10 = this->spawnAtLocation(ItemInstance(Tile::pumpkin->blockID, 1, 0), 1.0f);
+			this->setLitPumpkin(false);
+			Entity* v10 = this->spawnAtLocation(ItemInstance(dropId, 1, 0), 1.0f);
 			if (v10) {
 				v10->motionY += (float)(this->random.nextFloat() * 0.05f);
 				v10->motionX += (float)((this->random.nextFloat() - this->random.nextFloat()) * 0.1f);

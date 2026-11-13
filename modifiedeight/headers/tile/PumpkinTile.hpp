@@ -9,6 +9,7 @@ struct PumpkinTile : DirectionalTile{
 	PumpkinTile(int32_t, bool_t);
 
 	virtual ~PumpkinTile();
+	virtual TextureUVCoordinateSet* getTexture(int32_t);
 	virtual TextureUVCoordinateSet* getTexture(int32_t, int32_t);
 	virtual bool_t mayPlace(Level*, int32_t, int32_t, int32_t);
 	virtual void onPlace(Level*, int32_t, int32_t, int32_t);

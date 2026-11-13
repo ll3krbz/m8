@@ -26,6 +26,7 @@
 #include <tile/BlockColorRegistry.hpp>
 #include <tile/FlowerPotTile.hpp>
 #include <tile/LeafTile.hpp>
+#include <tile/PumpkinTile.hpp>
 #include <utils.h>
 
 void TileRenderer::_randomizeFaceDirection(Tile* a2, int32_t a3, float a4, float a5, float a6) {
@@ -1087,17 +1088,28 @@ void TileRenderer::renderTile(Tile* tile, int32_t a3, bool_t a4) {
 			tile->updateDefaultShape();
 			Tesselator::instance.addOffset(-0.5, -0.5, -0.5);
 			Tesselator::instance.begin(24);
+			Tesselator::instance.color(0.5f, 0.5f, 0.5f, 1.0f);
 			Tesselator::instance.normal(Vec3::NEG_UNIT_Y);
 			v8 = tile->getCarriedTexture(0, a3);
 			this->renderFaceDown(tile, 0.0, 0.0, 0.0, *v8);
+			Tesselator::instance.color(1.0f, 1.0f, 1.0f, 1.0f);
+			Tesselator::instance.normal(Vec3::UNIT_Y);
 			v9 = tile->getCarriedTexture(1, a3);
 			this->renderFaceUp(tile, 0.0, 0.0, 0.0, *v9);
+			Tesselator::instance.color(0.8f, 0.8f, 0.8f, 1.0f);
+			Tesselator::instance.normal(Vec3::NEG_UNIT_Z);
 			v10 = tile->getCarriedTexture(2, a3);
 			this->renderNorth(tile, 0.0, 0.0, 0.0, *v10);
+			Tesselator::instance.color(0.8f, 0.8f, 0.8f, 1.0f);
+			Tesselator::instance.normal(Vec3::UNIT_Z);
 			v46 = *tile->getCarriedTexture(3, a3);
 			this->renderSouth(tile, 0.0, 0.0, 0.0, v46);
+			Tesselator::instance.color(0.6f, 0.6f, 0.6f, 1.0f);
+			Tesselator::instance.normal(Vec3::NEG_UNIT_X);
 			v11 = tile->getCarriedTexture(4, a3);
 			this->renderWest(tile, 0.0, 0.0, 0.0, *v11);
+			Tesselator::instance.color(0.6f, 0.6f, 0.6f, 1.0f);
+			Tesselator::instance.normal(Vec3::UNIT_X);
 			v12 = tile->getCarriedTexture(5, a3);
 			this->renderEast(tile, 0.0, 0.0, 0.0, *v12);
 			Tesselator::instance.draw(0);
@@ -1725,8 +1737,8 @@ bool_t TileRenderer::tesselateBlockInWorld(Tile* tile, int32_t x, int32_t y, int
 			f2_g = (float)((fc >> 8) & 0xFF) / 255.0f;
 			f2_b = (float)(fc & 0xFF) / 255.0f;
 		}
-		Tesselator::instance.color(f2_r * (float)(v18 * 0.8), f2_g * (float)(v18 * 0.8), f2_b * (float)(v18 * 0.8));
 		v19 = tile->getTexture(this->levelSource, x, y, z, 2);
+		Tesselator::instance.color(f2_r * (float)(v18 * 0.8), f2_g * (float)(v18 * 0.8), f2_b * (float)(v18 * 0.8));
 		this->renderNorth(tile, (float)x, (float)y, (float)z, *v19);
 	}
 	if(this->disableCulling || tile->shouldRenderFace(this->levelSource, x, y, z + 1, 3)) {
@@ -1745,8 +1757,8 @@ bool_t TileRenderer::tesselateBlockInWorld(Tile* tile, int32_t x, int32_t y, int
 			f3_g = (float)((fc >> 8) & 0xFF) / 255.0f;
 			f3_b = (float)(fc & 0xFF) / 255.0f;
 		}
-		Tesselator::instance.color(f3_r * (float)(v20 * 0.8), f3_g * (float)(v20 * 0.8), f3_b * (float)(v20 * 0.8));
 		v29 = *tile->getTexture(this->levelSource, x, y, z, 3);
+		Tesselator::instance.color(f3_r * (float)(v20 * 0.8), f3_g * (float)(v20 * 0.8), f3_b * (float)(v20 * 0.8));
 		this->renderSouth(tile, (float)x, (float)y, (float)z, v29);
 	}
 	if(this->disableCulling || tile->shouldRenderFace(this->levelSource, x - 1, y, z, 4)) {
@@ -1765,8 +1777,8 @@ bool_t TileRenderer::tesselateBlockInWorld(Tile* tile, int32_t x, int32_t y, int
 			f4_g = (float)((fc >> 8) & 0xFF) / 255.0f;
 			f4_b = (float)(fc & 0xFF) / 255.0f;
 		}
-		Tesselator::instance.color(f4_r * (float)(v21 * 0.6), f4_g * (float)(v21 * 0.6), f4_b * (float)(v21 * 0.6));
 		v22 = tile->getTexture(this->levelSource, x, y, z, 4);
+		Tesselator::instance.color(f4_r * (float)(v21 * 0.6), f4_g * (float)(v21 * 0.6), f4_b * (float)(v21 * 0.6));
 		this->renderWest(tile, (float)x, (float)y, (float)z, *v22);
 	}
 	if(this->disableCulling || tile->shouldRenderFace(this->levelSource, x + 1, y, z, 5)) {
@@ -1786,8 +1798,8 @@ bool_t TileRenderer::tesselateBlockInWorld(Tile* tile, int32_t x, int32_t y, int
 			f5_g = (float)((fc >> 8) & 0xFF) / 255.0f;
 			f5_b = (float)(fc & 0xFF) / 255.0f;
 		}
-		Tesselator::instance.color(f5_r * (float)(v23 * 0.6), f5_g * (float)(v23 * 0.6), f5_b * (float)(v23 * 0.6));
 		v24 = tile->getTexture(this->levelSource, x, y, z, 5);
+		Tesselator::instance.color(f5_r * (float)(v23 * 0.6), f5_g * (float)(v23 * 0.6), f5_b * (float)(v23 * 0.6));
 		this->renderEast(tile, (float)x, (float)y, (float)z, *v24);
 	}
 	return v15;
@@ -2364,7 +2376,8 @@ LABEL_80:
 		this->field_30 = v71;
 		this->field_40 = this->field_40 * v64;
 		this->field_50 = this->field_50 * v64;
-		v133 = *tile->getTexture(v68, x, y, z, 3);
+		TextureUVCoordinateSet* pTex3 = tile->getTexture(v68, x, y, z, 3);
+		v133 = *pTex3;
 		if (BlockColorRegistry::hasBlockFaceColor(x, y, z, 3)) {
 			uint32_t fc = BlockColorRegistry::getBlockFaceColor(x, y, z, 3);
 			float fr = (float)((fc >> 16) & 0xFF) / 255.0f * 0.8f;
