@@ -147,6 +147,7 @@ int32_t PlayerRenderer::prepareArmor(Mob *a2_, int32_t armour, float a4) {
   hmodel2->rightLegModel.field_1D = v10;
   hmodel2->leftLegModel.field_1D = v10;
   this->setArmor(hmodel2);
+  hmodel2->curEntity = a2;
   hmodel2->field_4 = a2->isRiding();
   hmodel2->field_31A = a2->isSneaking();
   hmodel2->isSwimming = isPlayerSwimming(a2);
@@ -627,7 +628,7 @@ void PlayerRenderer::setupPosition(Entity *a2_, float a3, float a4, float a5) {
     a5 = a5 + a2->field_CCC;
   } else {
     v11 = a3;
-    v12 = a4;
+    v12 = a4 + a2->ySize;
   }
   MobRenderer::setupPosition(a2, v11, v12, a5);
 }
@@ -663,8 +664,13 @@ void PlayerRenderer::additionalRendering(Mob* a2, float a3) {
 	float zOff = (chestArmor && !chestArmor->isNull()) ? 3.2f : 2.15f;
 	glTranslatef(0.0f, 1.0f, zOff);
 
-	if (player->isSneaking()) {
-		glTranslatef(0.0f, 3.2f, 0.0f);
+	float crouch = this->hmodel ? this->hmodel->crouchAmount : (player->isSneaking() ? 1.0f : 0.0f);
+	float swim = this->hmodel ? this->hmodel->swimAmount : 0.0f;
+	if (crouch > 0.0f) {
+		glTranslatef(0.0f, 1.5f * crouch * (1.0f - swim), 0.0f);
+	}
+	if (swim > 0.0f) {
+		glTranslatef(0.0f, 0.0f, 0.8f * swim);
 	}
 
 	float pt = a3;
@@ -701,8 +707,12 @@ void PlayerRenderer::additionalRendering(Mob* a2, float a3) {
 	float walkPos = player->field_170 - (1.0f - pt) * player->field_16C;
 	float walk = sinf(walkPos * 0.6662f * 2.0f) * 6.0f * walkSpeed;
 
-	float capeXRot = 6.0f + forward / 2.0f + lift + walk + (player->isSneaking() ? 25.0f : 0.0f);
-	float capeZRot = sideways / 2.0f;
+	float capeXRot = 6.0f + forward / 2.0f + lift + walk + 25.0f * crouch * (1.0f - swim);
+	if (swim > 0.0f) {
+		float swimCapeRot = 8.0f + sinf(((float)player->field_D8 + pt) * 0.32f) * 4.0f;
+		capeXRot = capeXRot * (1.0f - swim) + swimCapeRot * swim;
+	}
+	float capeZRot = sideways / 2.0f * (1.0f - 0.5f * swim);
 	if (capeXRot < 0.0f) capeXRot = 0.0f;
 	if (capeXRot > 150.0f) capeXRot = 150.0f;
 	if (capeZRot < -15.0f) capeZRot = -15.0f;

@@ -451,20 +451,34 @@ void ServerSideNetworkHandler::handle(const RakNet::RakNetGUID& a2, struct Reque
 void ServerSideNetworkHandler::handle(const RakNet::RakNetGUID& a2, struct PlayerEquipmentPacket* a3) {
 	if(this->level) {
 		Player* p = this->getPlayer(a2);
-		if(!(this->rakPeer->GetMyGUID() == p->rakNetGUID)) {
-			ItemInstance v9(a3->itemID, 200, a3->itemMeta);
+		if(p && !(this->rakPeer->GetMyGUID() == p->rakNetGUID)) {
+			int32_t linkedCount = p->inventory->getLinkedSlotsCount();
+			int32_t containerSize = p->inventory->getContainerSize();
+			int32_t slot = a3->slot;
 			if(p->abilities.instabuild) {
-				p->inventory->replaceSlot(a3->slot, &v9);
+				if(slot < linkedCount || slot >= containerSize) {
+					slot = linkedCount;
+				}
+				if(slot >= linkedCount && slot < containerSize) {
+					if(a3->itemID) {
+						ItemInstance v9(a3->itemID, 200, a3->itemMeta);
+						p->inventory->replaceSlot(slot, &v9);
+					} else {
+						p->inventory->clearSlot(slot);
+					}
+				}
 			}
-			ItemInstance* v7 = p->inventory->getItem(a3->slot);
+			ItemInstance* v7 = p->inventory->getItem(slot);
 			if(!v7 || !ItemInstance::isItem(v7)) {
 				a3->itemMeta = 0;
 				a3->itemID = 0;
 			}
-			int slot = a3->slot;
 			if(slot >= 0 && a3->itemID) {
-				p->inventory->moveToSelectedSlot(slot);
-				p->inventory->selectSlot(a3->slot);
+				if(slot >= linkedCount) {
+					p->inventory->moveToSelectedSlot(slot);
+				} else {
+					p->inventory->selectSlot(slot);
+				}
 			} else {
 				p->inventory->unlinkSlot(p->inventory->selectedSlot);
 			}

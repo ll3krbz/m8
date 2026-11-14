@@ -147,6 +147,12 @@ void Screen::tick(){
 }
 void Screen::removed(){}
 void Screen::renderBackground(int32_t a2){
+	glDisable(GL_LIGHTING);
+	glDisable(GL_FOG);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	if(this->renderGameBehind()){
 		this->fill(0, 0, this->width, this->height, 0x7f000000);
 	}else{

@@ -586,6 +586,14 @@ LABEL_34:
 	}
 
 	if(this->minecraft->currentScreen) {
+		glDisable(GL_LIGHTING);
+		glDisable(GL_FOG);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_TEXTURE_2D);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		this->minecraft->currentScreen->render(mx, my, pt);
 		if(ControllerHandler::cursorVisible()) {
 			int32_t gx = (int32_t)(ControllerHandler::cursorX * Gui::InvGuiScale);

@@ -1116,3 +1116,6 @@ item.bed.brown.name=Brown Bed
 item.bed.green.name=Green Bed
 item.bed.red.name=Red Bed
 item.bed.black.name=Black Bed
+
+options.showcape=Show Cape
+options.skinsource=Skin Source

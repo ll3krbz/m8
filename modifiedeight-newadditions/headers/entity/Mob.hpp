@@ -65,6 +65,13 @@ struct Mob : Entity{
 	int32_t targetEID;
 	int32_t maybeEntityWhichIsBeingLookedByThisEntity;
 	int32_t field_C58, field_C5C, field_C60, field_C64;
+	int32_t lastHurtMobTicks;
+	int32_t ambientLookTicks;
+	int32_t ambientLookMode;
+	float ambientYawOffset;
+	float ambientPitchTarget;
+	float curHeadYawOffset;
+	float curHeadPitchOffset;
 	float speed;
 
 	Mob(Level*);

@@ -71,11 +71,11 @@ bool_t I18n::get(const std::string& a1, std::string& a2) {
 	if (a1 == "options.sprint.desc") { a2 = "Enables sprinting (double-tap forward)"; return 1; }
 	if (a1 == "options.autojump") { a2 = "Auto-Jump"; return 1; }
 	if (a1 == "options.fov") { a2 = "FOV"; return 1; }
-	if (a1 == "options.chatcolor") { a2 = "Chat Color"; return 1; }
+	if (a1 == "options.chatcolor") { a2 = "Chat Text Color"; return 1; }
 	if (a1 == "options.chatbgcolor") { a2 = "Chat BG Color"; return 1; }
 	if (a1 == "options.showfps") { a2 = "Show FPS"; return 1; }
 	if (a1 == "options.debugscreen") { a2 = "Debug Screen"; return 1; }
-	if (a1 == "options.discordrpc") { a2 = "Discord Integration"; return 1; }
+	if (a1 == "options.discordrpc") { a2 = "Discord RPC"; return 1; }
 	if (a1 == "options.hudcamerabutton") { a2 = "HUD Camera Button"; return 1; }
 	if (a1 == "options.hudcamerabutton.desc") { a2 = "Shows a camera toggle button in the HUD"; return 1; }
 	if (a1 == "options.swapjumpandsneak") { a2 = "Swap Jump and Sneak"; return 1; }
@@ -123,7 +123,7 @@ std::string I18n::get(const std::string& a2) {
 	if (a2 == "options.sprint.desc") return "Enables sprinting (double-tap forward)";
 	if (a2 == "options.autojump") return "Auto-Jump";
 	if (a2 == "options.fov") return "FOV";
-	if (a2 == "options.chatcolor") return "Chat Color";
+	if (a2 == "options.chatcolor") return "Chat Text Color";
 	if (a2 == "options.chatbgcolor") return "Chat BG Color";
 	if (a2 == "options.hudcamerabutton") return "HUD Camera Button";
 	if (a2 == "options.hudcamerabutton.desc") return "Shows a camera toggle button in the HUD";
@@ -143,8 +143,10 @@ std::string I18n::get(const std::string& a2) {
 	if (a2 == "options.smoothchunks") return "Smooth Chunk Loading";
 	if (a2 == "options.smoothchunks.desc") return "Smooths chunk rebuilds to eliminate frame drops";
 	if (a2 == "options.showfps") return "Show FPS";
+	if (a2 == "options.showcape") return "Show Cape";
+	if (a2 == "options.skinsource") return "Skin Source";
 	if (a2 == "options.debugscreen") return "Debug Screen";
-	if (a2 == "options.discordrpc") return "Discord Integration";
+	if (a2 == "options.discordrpc") return "Discord RPC";
 	if (a2 == "options.controllersensitivity") return "Controller Sensitivity";
 	if (a2 == "options.controllercursorsensitivity") return "Controller Cursor Sensitivity";
 	if (a2 == "options.controllerlayout") return "Controller Layout";

@@ -13,6 +13,7 @@
 #include <level/dimension/Dimension.hpp>
 #include <math.h>
 #include <math/Mth.hpp>
+#include <chrono>
 #include <rendering/EntityRenderDispatcher.hpp>
 #include <rendering/ItemInHandRenderer.hpp>
 #include <rendering/LevelRenderer.hpp>
@@ -106,13 +107,26 @@ void GameRenderer::bobHurt(float a2) {
 		glRotatef(v6, 0.0, 1.0, 0.0);
 	}
 }
+static float s_prevTurnRoll = 0.0f;
+static float s_turnRoll = 0.0f;
+static float s_prevSmoothFovModifier = 1.0f;
+static float s_smoothFovModifier = 1.0f;
+static float s_itemPitch = 0.0f;
+static float s_itemYaw = 0.0f;
+static bool s_itemSwayInit = false;
+
 void GameRenderer::bobView(float a2) {
 	if (!this->minecraft->options.viewBobbing) return;
 	if (this->minecraft->viewEntityMaybe && this->minecraft->viewEntityMaybe->isPlayer()) {
 		Player* p = (Player*)this->minecraft->viewEntityMaybe;
 		float bobAmount = p->field_C74 + (p->field_C78 - p->field_C74) * a2;
-		float bobPhase = -(p->field_BC + (p->field_BC - p->field_B8) * a2) * 3.14159265f;
+		float bobPhase = -(p->field_B8 + (p->field_BC - p->field_B8) * a2) * 3.14159265f;
 		float tilt = p->field_158 + (p->field_15C - p->field_158) * a2;
+
+		bool inWater = p->isInWater() || p->isUnderLiquid(Material::water);
+		if (inWater) {
+			bobAmount *= 0.25f;
+		}
 
 		float sinP = sinf(bobPhase);
 		float cosP = cosf(bobPhase);
@@ -125,16 +139,8 @@ void GameRenderer::bobView(float a2) {
 		glRotatef(fabsf(cosf(bobPhase) * bobAmount) * 2.0f * mult, 1.0f, 0.0f, 0.0f);
 		glRotatef(tilt, 1.0f, 0.0f, 0.0f);
 
-		float yawDiff = p->yaw - p->prevYaw;
-		while (yawDiff < -180.0f) yawDiff += 360.0f;
-		while (yawDiff >= 180.0f) yawDiff -= 360.0f;
-
-		static float s_turnRoll = 0.0f;
-		float targetRoll = -yawDiff * 0.04f + p->moveStrafe * 0.35f;
-		if (targetRoll > 0.8f) targetRoll = 0.8f;
-		if (targetRoll < -0.8f) targetRoll = -0.8f;
-		s_turnRoll += (targetRoll - s_turnRoll) * 0.08f;
-		glRotatef(s_turnRoll, 0.0f, 0.0f, 1.0f);
+		float turnRoll = s_prevTurnRoll + (s_turnRoll - s_prevTurnRoll) * a2;
+		glRotatef(turnRoll, 0.0f, 0.0f, 1.0f);
 	}
 }
 float GameRenderer::getFov(float a2, bool_t a3) {
@@ -142,10 +148,10 @@ float GameRenderer::getFov(float a2, bool_t a3) {
 		return 90.0f;
 	}
 
-	float v4;			  // s16
-	Minecraft* minecraft; // r1
-	Mob* viewEntityMaybe; // r5
-	float v8;			  // s14
+	float v4;
+	Minecraft* minecraft;
+	Mob* viewEntityMaybe;
+	float v8;
 
 	minecraft = this->minecraft;
 	v4 = minecraft->options.fov;
@@ -153,17 +159,8 @@ float GameRenderer::getFov(float a2, bool_t a3) {
 	if(a3) {
 		v4 = (float)(this->field_5C + (float)((float)(this->field_58 - this->field_5C) * a2)) * minecraft->options.fov;
 	}
-	static float s_smoothFovModifier = 1.0f;
 	if (this->minecraft->player) {
-		float target = 1.0f;
-		if (this->minecraft->player->isSprinting) {
-			target *= 1.04f;
-		}
-		if (this->minecraft->player->abilities.flying) {
-			target *= 1.03f;
-		}
-		s_smoothFovModifier += (target - s_smoothFovModifier) * 0.08f;
-		v4 *= s_smoothFovModifier;
+		v4 *= s_prevSmoothFovModifier + (s_smoothFovModifier - s_prevSmoothFovModifier) * a2;
 	}
 	if(viewEntityMaybe->isUnderLiquid(Material::water)) {
 		v4 = v4 * 0.98f;
@@ -640,6 +637,14 @@ LABEL_34:
 	}
 
 	if(this->minecraft->currentScreen) {
+		glDisable(GL_LIGHTING);
+		glDisable(GL_FOG);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_TEXTURE_2D);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		this->minecraft->currentScreen->render(mx, my, pt);
 		if(ControllerHandler::cursorVisible()) {
 			int32_t gx = (int32_t)(ControllerHandler::cursorX * Gui::InvGuiScale);
@@ -670,17 +675,42 @@ void GameRenderer::renderItemInHand(float a2, int32_t a3) {
 	if(this->minecraft->options.viewBobbing) {
 		this->bobView(a2);
 		viewEntityMaybe = this->minecraft->viewEntityMaybe;
-		Vec3 v21(viewEntityMaybe->pitch + (float)((float)(viewEntityMaybe->pitch - viewEntityMaybe->prevPitch) * a2), viewEntityMaybe->yaw + (float)((float)(viewEntityMaybe->yaw - viewEntityMaybe->prevYaw) * a2), 0.0);
-		Vec3 v22(this->field_130 - v21.x, this->field_134 - v21.y, this->field_138 - v21.z);
-		Vec3 v23(v22.x * 0.5, v22.y * 0.5, v22.z * 0.5);
-		v6 = this->field_130 - v23.x;
-		v7 = this->field_134 - v23.y;
-		v8 = this->field_138;
-		this->field_130 = v6;
-		this->field_134 = v7;
-		this->field_138 = v8 - v23.z;
-		glRotatef(v21.x - v6, 1.0, 0.0, 0.0);
-		glRotatef(v21.y - this->field_134, 0.0, 1.0, 0.0);
+		float interpPitch = viewEntityMaybe->prevPitch + (viewEntityMaybe->pitch - viewEntityMaybe->prevPitch) * a2;
+		float yawDiffStep = viewEntityMaybe->yaw - viewEntityMaybe->prevYaw;
+		while (yawDiffStep < -180.0f) yawDiffStep += 360.0f;
+		while (yawDiffStep >= 180.0f) yawDiffStep -= 360.0f;
+		float interpYaw = viewEntityMaybe->prevYaw + yawDiffStep * a2;
+		static uint64_t s_itemLastMs = 0;
+		uint64_t nowMs = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::steady_clock::now().time_since_epoch()).count();
+		if (!s_itemSwayInit) {
+			s_itemPitch = interpPitch;
+			s_itemYaw = interpYaw;
+			s_itemLastMs = nowMs;
+			s_itemSwayInit = true;
+		} else {
+			float dt = (nowMs > s_itemLastMs) ? (float)(nowMs - s_itemLastMs) * 0.001f : 0.0f;
+			if (dt > 0.05f) dt = 0.05f;
+			s_itemLastMs = nowMs;
+			float alpha = 1.0f - expf(-22.0f * dt);
+			s_itemPitch += (interpPitch - s_itemPitch) * alpha;
+			float yawDelta = interpYaw - s_itemYaw;
+			while (yawDelta < -180.0f) yawDelta += 360.0f;
+			while (yawDelta >= 180.0f) yawDelta -= 360.0f;
+			s_itemYaw += yawDelta * alpha;
+		}
+		float dPitch = interpPitch - s_itemPitch;
+		float dYaw = interpYaw - s_itemYaw;
+		while (dYaw < -180.0f) dYaw += 360.0f;
+		while (dYaw >= 180.0f) dYaw -= 360.0f;
+		if (dPitch > 8.0f) dPitch = 8.0f;
+		if (dPitch < -8.0f) dPitch = -8.0f;
+		if (dYaw > 8.0f) dYaw = 8.0f;
+		if (dYaw < -8.0f) dYaw = -8.0f;
+		this->field_130 = s_itemPitch;
+		this->field_134 = s_itemYaw;
+		glRotatef(dPitch, 1.0f, 0.0f, 0.0f);
+		glRotatef(dYaw, 0.0f, 1.0f, 0.0f);
 	}
 	minecraft = this->minecraft;
 	if(!minecraft->options.thirdPerson) {
@@ -1134,6 +1164,36 @@ void GameRenderer::tick(int32_t a2, int32_t a3) {
 	s_prevSneakCam = s_sneakCam;
 	float targetSneak = (this->minecraft && this->minecraft->viewEntityMaybe && this->minecraft->viewEntityMaybe->isSneaking()) ? 0.15f : 0.0f;
 	s_sneakCam += (targetSneak - s_sneakCam) * 0.35f;
+
+	s_prevTurnRoll = s_turnRoll;
+	if (this->minecraft && this->minecraft->viewEntityMaybe && this->minecraft->viewEntityMaybe->isPlayer()) {
+		Player* tp = (Player*)this->minecraft->viewEntityMaybe;
+		float yawDiff = tp->yaw - tp->prevYaw;
+		while (yawDiff < -180.0f) yawDiff += 360.0f;
+		while (yawDiff >= 180.0f) yawDiff -= 360.0f;
+		float targetRoll = -yawDiff * 0.04f + tp->moveStrafe * 0.35f;
+		if (targetRoll > 0.8f) targetRoll = 0.8f;
+		if (targetRoll < -0.8f) targetRoll = -0.8f;
+		s_turnRoll += (targetRoll - s_turnRoll) * 0.25f;
+	} else {
+		s_turnRoll *= 0.75f;
+	}
+
+	s_prevSmoothFovModifier = s_smoothFovModifier;
+	if (this->minecraft && this->minecraft->player) {
+		float targetFov = 1.0f;
+		if (this->minecraft->player->isSprinting) {
+			targetFov *= 1.04f;
+		}
+		if (this->minecraft->player->abilities.flying) {
+			targetFov *= 1.03f;
+		}
+		s_smoothFovModifier += (targetFov - s_smoothFovModifier) * 0.25f;
+	}
+
+	if (!this->minecraft || !this->minecraft->viewEntityMaybe) {
+		s_itemSwayInit = false;
+	}
 
 	Minecraft* minecraft;					// r3
 	int v5;									// s17

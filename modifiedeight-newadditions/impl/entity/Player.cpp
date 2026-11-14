@@ -2,6 +2,7 @@
 #include <entity/Player.hpp>
 #include <entity/LocalPlayer.hpp>
 #include <entity/ItemEntity.hpp>
+#include <entity/Arrow.hpp>
 
 int g_morningFogTicks = 0;
 #include <inventory/BaseContainerMenu.hpp>
@@ -87,9 +88,13 @@ void Player::attack(Entity* a2) {
 	int32_t dmg;	   // r2
 	ItemInstance* sel; // r6
 
+	if(!a2) return;
 	dmg = this->inventory->getAttackDamage(a2);
 	if(dmg > 0) {
 		a2->hurt(this, dmg);
+		if(this->level && !this->level->isClientMaybe && a2->isAlive() && a2->isMob() && a2 != this && (!a2->isPlayer() || (!((Player*)a2)->abilities.instabuild && !((Player*)a2)->abilities.invulnerable))) {
+			this->setLastHurtMob(a2);
+		}
 		sel = this->inventory->getSelected();
 		if(sel) {
 			if(a2->isMob() && !this->abilities.instabuild) {
@@ -704,7 +709,20 @@ bool_t Player::hurt(Entity* a2, int32_t a3) {
 		}
 	}
 	if(a3) {
-		return Mob::hurt(a2, a3);
+		if(!Mob::hurt(a2, a3)) {
+			return 0;
+		}
+		if(this->level && !this->level->isClientMaybe && a2) {
+			if(a2->getEntityTypeId() == 80) {
+				Entity* shooter = this->level->getEntity(((Arrow*)a2)->shooterEID);
+				if(shooter && shooter != this && shooter->isMob()) {
+					this->setLastHurtByMob((Mob*)shooter);
+				}
+			} else if(a2->isMob() && a2 != this) {
+				this->setLastHurtByMob((Mob*)a2);
+			}
+		}
+		return 1;
 	}
 	return 0;
 }

@@ -6,9 +6,14 @@ struct PolarBear: Animal {
 	int32_t stareTicks;
 	int32_t friendlyTicks;
 	int32_t trustedPlayerId;
+	int32_t repathTicks;
+	bool_t isInterested;
+	std::string ownerName;
 
 	PolarBear(Level*);
+	void updateSynchedFlags();
 	bool_t isFishItem(const ItemInstance*) const;
+	Player* resolveTrustedPlayer();
 	virtual ~PolarBear();
 	virtual int32_t getEntityTypeId() const;
 	virtual std::string* getTexture();
@@ -29,5 +34,6 @@ struct PolarBear: Animal {
 	virtual bool_t doHurtTarget(Entity*);
 	virtual void readAdditionalSaveData(CompoundTag*);
 	virtual void addAdditonalSaveData(CompoundTag*);
+	virtual bool_t removeWhenFarAway();
 	virtual Mob* getBreedOffspring(Animal*);
 };

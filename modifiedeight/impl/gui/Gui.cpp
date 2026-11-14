@@ -448,6 +448,16 @@ void Gui::render(float a2, bool_t a3, int32_t a4, int32_t a5) {
       if (!this->minecraftInst->currentScreen) {
         this->renderToolBar(a2, 0.65);
       }
+      glEnable(GL_TEXTURE_2D);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glDisable(GL_DEPTH_TEST);
+      glDisable(GL_FOG);
+      glDisable(GL_LIGHTING);
+      glDisable(0x0BC0u);
+      glDisableClientState(GL_COLOR_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
+      glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
       v18 = this->field_A8C;
       if (v18 > 0.0) {
         v19 = this->minecraftInst;
@@ -617,6 +627,16 @@ void Gui::renderBubbles() {
 void Gui::renderChatMessages(int32_t a2, int32_t a3, uint32_t a4, bool_t a5,
                              struct Font *a6) {
   if (!a5) {
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_FOG);
+    glDisable(GL_LIGHTING);
+    glDisable(0x0BC0u);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     int chatBaseY = 18;
     if (this->minecraftInst && !this->minecraftInst->options.hideGUI) {
       if (this->minecraftInst->options.debugScreen) {
@@ -665,8 +685,10 @@ void Gui::renderChatMessages(int32_t a2, int32_t a3, uint32_t a4, bool_t a5,
                 bgColor = 0;
 
               float lineY = (float)(9 * (v16 - 1) + chatBaseY);
-              this->fill(2.0f, lineY - 1.0f, (float)this->field_18 + 2.0f,
-                         lineY + 8.0f, bgColor);
+              if (userBgColor != 4 && (bgColor & 0xFF000000) != 0) {
+                this->fill(2.0f, lineY - 1.0f, (float)this->field_18 + 2.0f,
+                           lineY + 8.0f, bgColor);
+              }
 
               int textColor = 0xFFFFFF; // White
               if (str->field_8[0] == '/') {

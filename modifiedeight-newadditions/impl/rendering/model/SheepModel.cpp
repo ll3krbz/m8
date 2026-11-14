@@ -1,4 +1,5 @@
 #include <rendering/model/SheepModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
 #include <entity/Sheep.hpp>
 
 SheepModel::SheepModel(bool_t a2)
@@ -27,7 +28,8 @@ SheepModel::~SheepModel() {
 }
 void SheepModel::setupAnim(float a2, float a3, float a4, float a5, float a6, float a7) {
 	QuadrupedModel::setupAnim(a2, a3, a4, a5, a6, a7);
-	this->field_18.xRotAngle = this->headEatAngleScale;
+	float nod = animWindowHold(a4, 54.0f, 131U, 76U, false) * 0.16f + animBurstWave(a4, 48.0f, 137U, 64U, 2.8f) * 0.04f;
+	this->field_18.xRotAngle = this->headEatAngleScale + (this->headEatAngleScale < 0.35f ? nod : 0.0f);
 }
 void SheepModel::prepareMobModel(Mob* a2, float a3, float a4, float a5) {
 	this->field_18.yOffset = (((Sheep*)a2)->getHeadEatPositionScale(a5) * 9.0) + 6.0;

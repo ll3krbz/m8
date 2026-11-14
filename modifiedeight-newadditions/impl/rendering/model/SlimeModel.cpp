@@ -1,4 +1,6 @@
 #include <rendering/model/SlimeModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
+#include <entity/Entity.hpp>
 #include <unigl.h>
 
 SlimeModel::SlimeModel()
@@ -27,6 +29,19 @@ SlimeModel::~SlimeModel() {
 }
 
 void SlimeModel::render(Entity* a2, float a3, float a4, float a5, float a6, float a7, float a8) {
+	uint32_t seed = a2 ? (uint32_t)a2->entityId : 37U;
+	float t = a5 + (float)((seed & 63U) * 15U);
+	float lookX = animWindowHold(t, 40.0f, seed + 371U, 96U, true) * 0.35f;
+	float lookY = animWindowHold(t, 46.0f, seed + 379U, 88U, true) * 0.25f;
+	float wobble = animBurstWave(t, 52.0f, seed + 389U, 84U, 2.4f) * 0.06f;
+	this->innerCube.yRotAngle = wobble;
+	this->innerCube.zRotAngle = -wobble * 0.8f;
+	this->eye0.xOffset = lookX;
+	this->eye0.yOffset = lookY;
+	this->eye1.xOffset = lookX;
+	this->eye1.yOffset = lookY;
+	this->mouth.xOffset = lookX * 0.7f;
+	this->mouth.yOffset = lookY * 0.7f;
 	this->innerCube.render(a8);
 	this->eye0.render(a8);
 	this->eye1.render(a8);

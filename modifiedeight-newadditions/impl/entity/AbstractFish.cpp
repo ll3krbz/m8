@@ -230,14 +230,24 @@ void AbstractFish::aiStep() {
 			this->motionY = (this->motionY - 0.08f) * 0.98f;
 			this->isJumping = 0;
 			this->headYaw = this->yaw;
-
-			if (--this->air <= -20) {
-				this->air = 0;
-				this->hurt(0, 1);
-			}
 		}
 		WaterAnimal::aiStep();
 	} catch (...) {
+	}
+}
+
+void AbstractFish::baseTick() {
+	int32_t prevAir = this->air;
+	WaterAnimal::baseTick();
+	if (this->isInWater() || this->isUnderLiquid(Material::water)) {
+		this->air = 300;
+	} else {
+		this->air = prevAir - 1;
+		if (this->air <= -20) {
+			this->air = 0;
+			this->field_DC = 0;
+			this->hurt(0, 1);
+		}
 	}
 }
 

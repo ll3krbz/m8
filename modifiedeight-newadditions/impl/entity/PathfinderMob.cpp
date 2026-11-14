@@ -109,7 +109,7 @@ void PathfinderMob::updateAi() {
 	v9 = Mth::floor(this->boundingBox.minY + 0.5);
 	v10 = this->isInWater();
 	v11 = this->isInLava();
-	this->pitch = 0.0;
+	this->pitch = this->pitch * 0.85f;
 	v12 = v11;
 	if(this->path && this->random.genrand_int32() % 100) {
 		Vec3 v34 = this->path->currentPos(this);

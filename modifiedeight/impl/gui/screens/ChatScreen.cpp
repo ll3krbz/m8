@@ -24,6 +24,7 @@
 #include <item/ItemInstance.hpp>
 #include <inventory/Inventory.hpp>
 #include <map>
+#include <unigl.h>
 
 ChatScreen::ChatScreen()
 	: Screen() {
@@ -552,12 +553,28 @@ void ChatScreen::render(int32_t a2, int32_t a3, float a4) {
 		v12 = v11;
 	}
 	v13 = height - v12;
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_FOG);
+	glDisable(GL_LIGHTING);
+	glDisable(0x0BC0u);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	this->drawChatMessages(v13);
 	Screen::render(a2, a3, a4);
 	this->field_60->posX = 0;
 	this->field_60->posY = this->height - v12;
 	this->field_60->width = v10;
 	this->field_60->height = v12;
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_FOG);
+	glDisable(GL_LIGHTING);
+	glDisable(0x0BC0u);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	this->fill(0, v13, v10, this->height, -16777216);
 	{
 		std::string ss = this->field_54;

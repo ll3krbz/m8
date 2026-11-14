@@ -49,12 +49,19 @@ TextureUVCoordinateSet* MonsterPlacerItem::getIcon(int32_t a2, int32_t a3, bool_
 		if (a2 == 11) index = 1;
 		else if (a2 == 12) index = 2;
 		else if (a2 == 13) index = 3;
-		else if (a2 == 32) index = 4; // Zombie
-		else if (a2 == 33) index = 5; // Creeper
-		else if (a2 == 34) index = 6; // Skeleton
-		else if (a2 == 35) index = 7; // Spider
-		else if (a2 == 36) index = 8; // PigZombie
-		return texItem->getUV(index);
+		else if (a2 == 32 || a2 == 53) index = 4;
+		else if (a2 == 33) index = 5;
+		else if (a2 == 34) index = 6;
+		else if (a2 == 35) index = 7;
+		else if (a2 == 36) index = 8;
+		TextureUVCoordinateSet* uv = texItem->getUV(index);
+		if (uv && uv->width > 0.0f && (uv->maxX - uv->minX) > 0.0001f) {
+			return uv;
+		}
+		TextureUVCoordinateSet* fallback = texItem->getUV(0);
+		if (fallback && fallback->width > 0.0f && (fallback->maxX - fallback->minX) > 0.0001f) {
+			return fallback;
+		}
 	}
 	return &this->field_48;
 }

@@ -560,10 +560,12 @@ void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID&, struct PlayerEq
 					if(a3->itemID) {
 						ItemInstance v8(a3->itemID, 63, a3->itemMeta);
 						v7->inventory->replaceSlot(9, &v8);
+						v7->inventory->selectSlot(0);
+						v7->inventory->linkSlot(0, 9);
 					} else {
 						v7->inventory->clearSlot(9);
+						v7->inventory->unlinkSlot(v7->inventory->selectedSlot);
 					}
-					v7->inventory->moveToSelectedSlot(9);
 				}
 			}
 		}

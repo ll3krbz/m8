@@ -63,7 +63,12 @@ TextureUVCoordinateSet* MonsterPlacerItem::getIcon(int32_t a2, int32_t a3, bool_
 	}
 	if (namedEgg) {
 		TextureAtlasTextureItem* t = Item::getTextureItem(namedEgg);
-		if (t) return t->getUV(0);
+		if (t) {
+			TextureUVCoordinateSet* uv = t->getUV(0);
+			if (uv && uv->width > 0.0f && (uv->maxX - uv->minX) > 0.0001f) {
+				return uv;
+			}
+		}
 	}
 	TextureAtlasTextureItem* texItem = Item::getTextureItem("spawn_egg");
 	if (texItem) {
@@ -77,7 +82,14 @@ TextureUVCoordinateSet* MonsterPlacerItem::getIcon(int32_t a2, int32_t a3, bool_
 		else if (a2 == 34) index = 6;
 		else if (a2 == 35) index = 7;
 		else if (a2 == 36) index = 8;
-		return texItem->getUV(index);
+		TextureUVCoordinateSet* uv = texItem->getUV(index);
+		if (uv && uv->width > 0.0f && (uv->maxX - uv->minX) > 0.0001f) {
+			return uv;
+		}
+		TextureUVCoordinateSet* fallback = texItem->getUV(0);
+		if (fallback && fallback->width > 0.0f && (fallback->maxX - fallback->minX) > 0.0001f) {
+			return fallback;
+		}
 	}
 	return &this->field_48;
 }

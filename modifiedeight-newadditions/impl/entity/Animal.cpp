@@ -1,6 +1,7 @@
 #include <entity/Animal.hpp>
 #include <entity/Player.hpp>
 #include <entity/player/Abilities.hpp>
+#include <entity/path/Path.hpp>
 #include <inventory/Inventory.hpp>
 #include <item/Item.hpp>
 #include <level/Level.hpp>
@@ -140,6 +141,69 @@ void Animal::aiStep() {
 			v15 = v12 + (float)(v13 * this->entityHeight);
 			v16 = this->random.nextFloat();
 			level->addParticle(PT_HEART, v11, v15, (float)(posZ + (float)((float)(v16 * this->entityWidth) + (float)(v16 * this->entityWidth))) - this->entityWidth, g * 0.02, v5 * 0.02, v9 * 0.02, 0);
+		}
+		if (!this->useNewAi() && this->level && !this->level->isClientMaybe) {
+			std::vector<Entity*> candidates;
+			AABB searchBox{this->boundingBox.minX - 8.0f, this->boundingBox.minY - 8.0f, this->boundingBox.minZ - 8.0f, this->boundingBox.maxX + 8.0f, this->boundingBox.maxY + 8.0f, this->boundingBox.maxZ + 8.0f};
+			this->level->getEntitiesOfType(this->getEntityTypeId(), searchBox, candidates);
+			Animal* mate = 0;
+			float bestDistSq = 64.0f;
+			for (size_t i = 0; i < candidates.size(); ++i) {
+				Animal* other = (Animal*)candidates[i];
+				if (other && this->canMate(other)) {
+					float dSq = this->distanceToSqr(other);
+					if (dSq < bestDistSq) {
+						bestDistSq = dSq;
+						mate = other;
+					}
+				}
+			}
+			if (mate) {
+				this->attackTarget = 0;
+				this->lookAt(mate, 30.0f, 30.0f);
+				float breedDistSq = (this->entityWidth > 1.0f) ? 12.25f : 6.25f;
+				if (bestDistSq > breedDistSq) {
+					if (!this->path || this->path->isDone() || (this->random.genrand_int32() % 10) == 0) {
+						this->setPath(this->level->findPath(this, mate, 16.0f, 1, 0, 0, 1));
+					}
+					if (!this->path) {
+						float dx = mate->posX - this->posX;
+						float dz = mate->posZ - this->posZ;
+						float targetYaw = (atan2f(dz, dx) * 180.0f / 3.14159265f) - 90.0f;
+						float diff = Mth::wrapDegrees(targetYaw - this->yaw);
+						this->yaw = Mth::wrapDegrees(this->yaw + Mth::clamp(diff, -25.0f, 25.0f));
+						this->moveForward = this->getSpeed();
+					}
+				} else {
+					if (this->path) {
+						this->setPath(0);
+					}
+					if (this->inLove <= 555 || mate->inLove <= 555) {
+						AgableMob* baby = (AgableMob*)this->getBreedOffspring(mate);
+						if (baby) {
+							this->setAge(6000);
+							mate->setAge(6000);
+							this->resetLove();
+							mate->resetLove();
+							baby->setAge(-24000);
+							baby->moveTo(this->posX, this->posY, this->posZ, this->yaw, 0.0f);
+							this->level->addEntity(baby);
+							for (int32_t p = 0; p < 7; ++p) {
+								float gx = this->random.nextGaussian() * 0.02f;
+								float gy = this->random.nextGaussian() * 0.02f;
+								float gz = this->random.nextGaussian() * 0.02f;
+								float px = this->posX + (this->random.nextFloat() * this->entityWidth * 2.0f) - this->entityWidth;
+								float py = this->posY + 0.5f + (this->random.nextFloat() * this->entityHeight);
+								float pz = this->posZ + (this->random.nextFloat() * this->entityWidth * 2.0f) - this->entityWidth;
+								this->level->addParticle(PT_HEART, px, py, pz, gx, gy, gz, 0);
+							}
+						} else {
+							this->resetLove();
+							mate->resetLove();
+						}
+					}
+				}
+			}
 		}
 	}
 }

@@ -357,7 +357,7 @@ bool_t I18n::get(const std::string &a1, std::string &a2) {
     return 1;
   }
   if (a1 == "options.discordrpc") {
-    a2 = "Discord Integration";
+    a2 = "Discord RPC";
     return 1;
   }
   if (a1 == "options.lodchunks") {
@@ -365,7 +365,15 @@ bool_t I18n::get(const std::string &a1, std::string &a2) {
     return 1;
   }
   if (a1 == "options.classicbackground") {
-    a2 = "Classic Background";
+    a2 = "Menu Background";
+    return 1;
+  }
+  if (a1 == "options.showcape") {
+    a2 = "Show Cape";
+    return 1;
+  }
+  if (a1 == "options.skinsource") {
+    a2 = "Skin Source";
     return 1;
   }
   if (a1 == "options.classicgui") {
@@ -677,7 +685,11 @@ std::string I18n::get(const std::string &a2) {
   if (a2 == "options.chatbgcolor")
     return "Chat BG Color";
   if (a2 == "options.classicbackground")
-    return "Classic Background";
+    return "Menu Background";
+  if (a2 == "options.showcape")
+    return "Show Cape";
+  if (a2 == "options.skinsource")
+    return "Skin Source";
   if (a2 == "options.classicgui")
     return "Classic GUI";
   if (a2 == "options.neoncolortheme")
@@ -770,7 +782,7 @@ std::string I18n::get(const std::string &a2) {
   if (a2 == "options.debugscreen")
     return "Debug Screen";
   if (a2 == "options.discordrpc")
-    return "Discord Integration";
+    return "Discord RPC";
   if (a2 == "options.lodchunks")
     return "LOD Chunks";
   if (a2 == "options.group.realism") return "Realism";

@@ -12,6 +12,8 @@ struct HumanoidModel: Model
 	bool_t isSwimming;
 	Entity* curEntity;
 	int32_t field_31C;
+	float crouchAmount;
+	float swimAmount;
 
 	HumanoidModel(float, float);
 

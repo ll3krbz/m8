@@ -3,6 +3,45 @@
 #include <entity/Mob.hpp>
 #include <math/Mth.hpp>
 #include <math.h>
+#include <chrono>
+#include <map>
+
+struct HumanoidCrouchState {
+	float crouch;
+	float lastBob;
+	uint64_t lastMs;
+};
+static std::map<int32_t, HumanoidCrouchState> s_crouchStates;
+
+static uint64_t getPoseNowMs() {
+	return (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+static float updateSmoothCrouch(Entity* ent, float targetCrouch, float bob) {
+	if (!ent) return targetCrouch;
+	uint64_t nowMs = getPoseNowMs();
+	auto it = s_crouchStates.find(ent->entityId);
+	if (it == s_crouchStates.end()) {
+		HumanoidCrouchState st;
+		st.crouch = targetCrouch;
+		st.lastBob = bob;
+		st.lastMs = nowMs;
+		s_crouchStates[ent->entityId] = st;
+		return targetCrouch;
+	}
+	HumanoidCrouchState& st = it->second;
+	if (fabsf(bob - st.lastBob) > 1e-4f || (nowMs >= st.lastMs && (nowMs - st.lastMs) >= 16)) {
+		float dt = (nowMs > st.lastMs) ? (float)(nowMs - st.lastMs) * 0.001f : 0.0f;
+		if (dt > 0.05f) dt = 0.05f;
+		float alpha = 1.0f - expf(-18.0f * dt);
+		st.crouch += (targetCrouch - st.crouch) * alpha;
+		if (fabsf(targetCrouch - st.crouch) < 0.001f) st.crouch = targetCrouch;
+		st.lastBob = bob;
+		st.lastMs = nowMs;
+	}
+	return st.crouch;
+}
 
 HumanoidModel::HumanoidModel(float a2, float a3)
 	: headModel(0, 0, 64, 32)
@@ -20,6 +59,9 @@ HumanoidModel::HumanoidModel(float a2, float a3)
 	this->field_319 = 0;
 	this->field_31A = 0;
 	this->isUsingBow = 0;
+	this->curEntity = 0;
+	this->field_31C = 0;
+	this->crouchAmount = 0.0f;
 	this->headModel.setModel(this);
 	this->bodyModel.setModel(this);
 	this->rightArmModel.setModel(this);
@@ -46,9 +88,13 @@ HumanoidModel::HumanoidModel(float a2, float a3)
 HumanoidModel::~HumanoidModel() {
 }
 void HumanoidModel::render(Entity* a2, float a3, float a4, float a5, float a6, float a7, float a8) {
-	ItemInstance* item; // r7
+	ItemInstance* item;
 
+	this->curEntity = a2;
+	this->field_31A = 0;
 	if(a2) {
+		this->field_4 = a2->isRiding();
+		this->field_31A = a2->isSneaking();
 		if(a2->isMob()) {
 			item = ((Mob*)a2)->getCarriedItem();
 			if(item) {
@@ -66,6 +112,8 @@ void HumanoidModel::render(Entity* a2, float a3, float a4, float a5, float a6, f
 	this->rightLegModel.render(a8);
 	this->leftLegModel.render(a8);
 	this->isUsingBow = 0;
+	this->field_31A = 0;
+	this->curEntity = 0;
 }
 
 void HumanoidModel::renderHorrible(float a2, float a3, float a4, float a5, float a6, float a7) {
@@ -170,29 +218,19 @@ void HumanoidModel::setupAnim(float a2, float a3, float a4, float a5, float a6, 
 		this->rightArmModel.xRotAngle = this->rightArmModel.xRotAngle - (float)((float)((float)-(float)(v23 * v22) * 0.75) + (float)(v21 * 1.2));
 		this->rightArmModel.zRotAngle = Mth::sin(v19 * 3.1416) * -0.4;
 	}
-	if(this->field_31A) {
-		this->bodyModel.xRotAngle = 0.5f;
-		this->bodyModel.yOffset = 3.2f;
-		this->rightArmModel.xRotAngle = this->rightArmModel.xRotAngle + 0.4f;
-		this->leftArmModel.xRotAngle = this->leftArmModel.xRotAngle + 0.4f;
-		this->rightArmModel.yOffset = 5.2f;
-		this->leftArmModel.yOffset = 5.2f;
-		this->rightLegModel.zOffset = 4.0f;
-		this->leftLegModel.zOffset = 4.0f;
-		this->rightLegModel.yOffset = 12.2f;
-		this->leftLegModel.yOffset = 12.2f;
-		this->headModel.yOffset = 4.2f;
-	} else {
-		this->bodyModel.xRotAngle = 0.0f;
-		this->bodyModel.yOffset = 0.0f;
-		this->rightArmModel.yOffset = 2.0f;
-		this->leftArmModel.yOffset = 2.0f;
-		this->rightLegModel.zOffset = 0.0f;
-		this->leftLegModel.zOffset = 0.0f;
-		this->headModel.yOffset = 0.0f;
-		this->rightLegModel.yOffset = 12.0f;
-		this->leftLegModel.yOffset = 12.0f;
-	}
+	float crouch = updateSmoothCrouch(this->curEntity, (this->field_31A && !this->field_4) ? 1.0f : 0.0f, a4);
+	this->crouchAmount = crouch;
+	this->bodyModel.xRotAngle = 0.5f * crouch;
+	this->bodyModel.yOffset = 3.2f * crouch;
+	this->rightArmModel.xRotAngle = this->rightArmModel.xRotAngle + 0.4f * crouch;
+	this->leftArmModel.xRotAngle = this->leftArmModel.xRotAngle + 0.4f * crouch;
+	this->rightArmModel.yOffset = 2.0f + 3.2f * crouch;
+	this->leftArmModel.yOffset = 2.0f + 3.2f * crouch;
+	this->rightLegModel.zOffset = 4.0f * crouch;
+	this->leftLegModel.zOffset = 4.0f * crouch;
+	this->rightLegModel.yOffset = 12.0f;
+	this->leftLegModel.yOffset = 12.0f;
+	this->headModel.yOffset = 4.2f * crouch;
 	v25 = (float)(Mth::cos(a4 * 0.09) * 0.05) + 0.05;
 	v26 = Mth::sin(a4 * 0.067);
 	this->rightArmModel.zRotAngle = this->rightArmModel.zRotAngle + v25;

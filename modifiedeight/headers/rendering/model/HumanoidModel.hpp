@@ -9,7 +9,9 @@ struct HumanoidModel: Model
 	ModelPart rightLegModel, leftLegModel;
 	int8_t field_318, field_319, field_31A;
 	bool_t isUsingBow;
+	Entity* curEntity;
 	int32_t field_31C;
+	float crouchAmount;
 
 	HumanoidModel(float, float);
 

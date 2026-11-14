@@ -1,4 +1,6 @@
 #include <rendering/model/PolarBearModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
+#include <entity/PolarBear.hpp>
 #include <math/Mth.hpp>
 
 #ifndef M_PI
@@ -57,8 +59,14 @@ PolarBearModel::~PolarBearModel() {
 }
 
 void PolarBearModel::setupAnim(float a2, float a3, float a4, float a5, float a6, float a7) {
-	this->head.xRotAngle = a6 * (float)(M_PI / 180.0);
-	this->head.yRotAngle = a5 * (float)(M_PI / 180.0);
+	float scentLift = -animWindowHold(a4, 60.0f, 261U, 76U, false) * 0.22f;
+	float scentSweep = animBurstWave(a4, 60.0f, 263U, 72U, 1.6f) * 0.16f + animWindowHold(a4, 52.0f, 269U, 84U, true) * 0.14f;
+	float headTilt = animWindowHold(a4, 48.0f, 271U, 80U, true) * 0.18f;
+	float bodyShift = animWindowHold(a4, 68.0f, 277U, 68U, true) * 0.035f;
+	this->head.xRotAngle = a6 * (float)(M_PI / 180.0) + scentLift + (a3 > 0.001f ? Mth::cos(a2 * 0.6662f * 2.0f) * a3 * 0.06f : 0.0f);
+	this->head.yRotAngle = a5 * (float)(M_PI / 180.0) + scentSweep;
+	this->head.zRotAngle = headTilt - (a3 > 0.001f ? Mth::sin(a2 * 0.6662f) * a3 * 0.04f : 0.0f);
+	this->body.zRotAngle = bodyShift + (a3 > 0.001f ? Mth::sin(a2 * 0.6662f) * a3 * 0.055f : 0.0f);
 	this->leg0.xRotAngle = Mth::cos(a2 * 0.6662f) * 1.4f * a3;
 	this->leg1.xRotAngle = Mth::cos(a2 * 0.6662f + (float)M_PI) * 1.4f * a3;
 	this->leg2.xRotAngle = Mth::cos(a2 * 0.6662f + (float)M_PI) * 1.4f * a3;
@@ -67,6 +75,32 @@ void PolarBearModel::setupAnim(float a2, float a3, float a4, float a5, float a6,
 
 void PolarBearModel::render(Entity* a2, float a3, float a4, float a5, float a6, float a7, float a8) {
 	this->setupAnim(a3, a4, a5, a6, a7, a8);
+	PolarBear* bear = (a2 && a2->getEntityTypeId() == 26) ? (PolarBear*)a2 : 0;
+	if (bear && bear->isInterested) {
+		uint32_t seed = (uint32_t)bear->entityId;
+		float t = a5 + (float)((seed & 31U) * 19U);
+		float side = ((seed & 1U) != 0) ? 1.0f : -1.0f;
+		this->head.zRotAngle = side * 0.24f + Mth::sin(t * 0.28f) * 0.05f;
+		this->head.xRotAngle -= 0.14f + Mth::sin(t * 0.42f) * 0.04f;
+		this->body.zRotAngle = Mth::sin(t * 0.22f) * 0.04f;
+	}
+	if (this->field_14) {
+		glPushMatrix();
+		glTranslatef(0.0f, 11.5f * a8, 3.0f * a8);
+		glScalef(0.65f, 0.65f, 0.65f);
+		this->head.render(a8);
+		glPopMatrix();
+		glPushMatrix();
+		glScalef(0.5f, 0.5f, 0.5f);
+		glTranslatef(0.0f, 24.0f * a8, 0.0f);
+		this->body.render(a8);
+		this->leg0.render(a8);
+		this->leg1.render(a8);
+		this->leg2.render(a8);
+		this->leg3.render(a8);
+		glPopMatrix();
+		return;
+	}
 	this->head.render(a8);
 	this->body.render(a8);
 	this->leg0.render(a8);

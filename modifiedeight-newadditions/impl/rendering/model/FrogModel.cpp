@@ -1,4 +1,6 @@
 #include <rendering/model/FrogModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
+#include <entity/Entity.hpp>
 #include <math/Mth.hpp>
 
 #ifndef M_PI
@@ -56,12 +58,24 @@ FrogModel::~FrogModel() {
 }
 
 void FrogModel::setupAnim(float a2, float a3, float a4, float a5, float a6, float a7) {
-	this->head.yRotAngle = a5 * (float)(M_PI / 180.0);
-	this->head.xRotAngle = a6 * (float)(M_PI / 180.0);
+	float headTilt = animWindowHold(a4, 42.0f, 401U, 88U, true) * 0.16f;
+	float frogGlance = animWindowHold(a4, 48.0f, 409U, 84U, true) * 0.14f;
+	float throatPulse = fabsf(animBurstWave(a4, 46.0f, 419U, 96U, 2.2f));
+	this->head.yRotAngle = a5 * (float)(M_PI / 180.0) + frogGlance;
+	this->head.xRotAngle = a6 * (float)(M_PI / 180.0) - throatPulse * 0.08f;
+	this->head.zRotAngle = headTilt;
 	this->leftEye.yRotAngle = this->head.yRotAngle;
 	this->leftEye.xRotAngle = this->head.xRotAngle;
+	this->leftEye.zRotAngle = headTilt;
 	this->rightEye.yRotAngle = this->head.yRotAngle;
 	this->rightEye.xRotAngle = this->head.xRotAngle;
+	this->rightEye.zRotAngle = headTilt;
+	this->croakingBody.setPos(0.0f, 21.0f - throatPulse * 0.6f, -1.0f - throatPulse * 0.8f);
+	this->croakingBody.xRotAngle = throatPulse * 0.18f;
+	this->leftLeg.yRotAngle = 0.0f;
+	this->rightLeg.yRotAngle = 0.0f;
+	this->leftArm.yRotAngle = 0.0f;
+	this->rightArm.yRotAngle = 0.0f;
 	this->leftLeg.xRotAngle = Mth::cos(a2 * 0.6662f) * 0.8f * a3;
 	this->rightLeg.xRotAngle = Mth::cos(a2 * 0.6662f + (float)M_PI) * 0.8f * a3;
 	this->leftArm.xRotAngle = Mth::cos(a2 * 0.6662f + (float)M_PI) * 0.4f * a3;
@@ -70,7 +84,21 @@ void FrogModel::setupAnim(float a2, float a3, float a4, float a5, float a6, floa
 
 void FrogModel::render(Entity* a2, float a3, float a4, float a5, float a6, float a7, float a8) {
 	this->setupAnim(a3, a4, a5, a6, a7, a8);
+	if (a2 && a2->isInWater()) {
+		float swimCycle = a5 * 0.25f;
+		float amp = 0.35f + Mth::clamp(a4, 0.0f, 1.0f) * 0.65f;
+		float legKick = 0.55f + Mth::sin(swimCycle) * 0.65f * amp;
+		this->leftLeg.xRotAngle = legKick;
+		this->rightLeg.xRotAngle = legKick;
+		this->leftLeg.yRotAngle = -0.18f - Mth::cos(swimCycle) * 0.22f * amp;
+		this->rightLeg.yRotAngle = 0.18f + Mth::cos(swimCycle) * 0.22f * amp;
+		this->leftArm.xRotAngle = 0.45f + Mth::cos(swimCycle) * 0.35f * amp;
+		this->rightArm.xRotAngle = 0.45f + Mth::cos(swimCycle) * 0.35f * amp;
+	}
 	this->body.render(a8);
+	if (fabsf(animBurstWave(a5, 46.0f, 419U, 96U, 2.2f)) > 0.05f) {
+		this->croakingBody.render(a8);
+	}
 	this->head.render(a8);
 	this->leftEye.render(a8);
 	this->rightEye.render(a8);

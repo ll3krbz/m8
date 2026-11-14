@@ -3,7 +3,9 @@
 #include <entity/Player.hpp>
 #include <rendering/EntityRenderDispatcher.hpp>
 #include <rendering/ItemInHandRenderer.hpp>
+#include <rendering/TileRenderer.hpp>
 #include <level/Level.hpp>
+#include <tile/Tile.hpp>
 
 VillagerRenderer::VillagerRenderer(VillagerModel* model, float shadow)
 	: MobRenderer(model, shadow) {
@@ -41,13 +43,13 @@ void VillagerRenderer::additionalRendering(Mob* a2, float a3) {
 		if (this->model) {
 			((VillagerModel*)this->model)->arms.translateTo(0.0625f);
 		}
-		if (showInst.tileClass != nullptr) {
-			glTranslatef(0.0f, 0.25f, -0.32f);
+		if (showInst.tileClass != nullptr && TileRenderer::canRender(showInst.tileClass->getRenderShape())) {
+			glTranslatef(0.0f, 0.14f, -0.14f);
 			glRotatef(45.0f, 0.0f, 1.0f, 0.0f);
 			glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
-			glScalef(0.38f, 0.38f, 0.38f);
+			glScalef(0.36f, 0.36f, 0.36f);
 		} else {
-			glTranslatef(0.0f, 0.22f, -0.32f);
+			glTranslatef(0.18f, 0.30f, 0.02f);
 			glScalef(0.38f, 0.38f, 0.38f);
 			glRotatef(60.0f, 0.0f, 0.0f, 1.0f);
 			glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);

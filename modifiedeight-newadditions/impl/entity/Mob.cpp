@@ -14,6 +14,7 @@
 #include <entity/path/PathNavigation.hpp>
 #include <entity/ai/Sensing.hpp>
 #include <entity/Player.hpp>
+#include <entity/Arrow.hpp>
 #include <tile/material/Material.hpp>
 #include <network/packet/MoveEntityPacket_PosRot.hpp>
 #include <network/packet/SetEntityMotionPacket.hpp>
@@ -76,6 +77,13 @@ Mob::Mob(Level* a2)
 	this->field_C58 = 0;
 	this->field_C5C = 0;
 	this->field_C60 = 0;
+	this->lastHurtMobTicks = 0;
+	this->ambientLookTicks = 0;
+	this->ambientLookMode = 0;
+	this->ambientYawOffset = 0.0f;
+	this->ambientPitchTarget = 0.0f;
+	this->curHeadYawOffset = 0.0f;
+	this->curHeadPitchOffset = 0.0f;
 	this->speed = 0.0;
 	this->synchedEntityData.define<int8_t>(0, 0);
 	this->synchedEntityData.define<int16_t>(1, 300);
@@ -406,6 +414,68 @@ void Mob::tick() {
 		}
 	}
 
+	if (!this->isPlayer() && this->health > 0 && this->getEntityTypeId() != 14 && this->getEntityTypeId() != 38 && this->getEntityTypeId() != 22) {
+		Player* nearPlayer = this->level ? this->level->getNearestPlayer(this, 10.0f) : 0;
+		if (this->ambientLookTicks > 0) {
+			--this->ambientLookTicks;
+		}
+		if (this->ambientLookTicks <= 0) {
+			int32_t r = this->random.genrand_int32() % 100;
+			if (this->ambientLookMode != 0 && r < 40) {
+				this->ambientLookMode = 0;
+				this->ambientLookTicks = 24 + (this->random.genrand_int32() % 44);
+				this->ambientYawOffset = 0.0f;
+				this->ambientPitchTarget = 0.0f;
+			} else if (nearPlayer && nearPlayer->isAlive() && r < 68) {
+				this->ambientLookMode = 1;
+				this->ambientLookTicks = 20 + (this->random.genrand_int32() % 38);
+				this->ambientYawOffset = (this->random.nextFloat() - 0.5f) * 10.0f;
+				this->ambientPitchTarget = (this->random.nextFloat() - 0.5f) * 6.0f;
+			} else if (r < 85) {
+				this->ambientLookMode = 2;
+				this->ambientLookTicks = 15 + (this->random.genrand_int32() % 28);
+				float side = (this->ambientYawOffset >= 0.0f) ? -1.0f : 1.0f;
+				this->ambientYawOffset = side * (20.0f + this->random.nextFloat() * 32.0f);
+				this->ambientPitchTarget = (this->random.nextFloat() - 0.45f) * 14.0f;
+			} else if (r < 94) {
+				this->ambientLookMode = 3;
+				this->ambientLookTicks = 16 + (this->random.genrand_int32() % 26);
+				this->ambientYawOffset = (this->random.nextFloat() - 0.5f) * 24.0f;
+				this->ambientPitchTarget = 12.0f + this->random.nextFloat() * 15.0f;
+			} else {
+				this->ambientLookMode = 4;
+				this->ambientLookTicks = 12 + (this->random.genrand_int32() % 20);
+				this->ambientYawOffset = (this->random.nextFloat() - 0.5f) * 34.0f;
+				this->ambientPitchTarget = -10.0f - this->random.nextFloat() * 12.0f;
+			}
+		}
+		float targetYawOff = this->ambientYawOffset;
+		float targetPitchOff = this->ambientPitchTarget;
+		if (this->ambientLookMode == 1 && nearPlayer && nearPlayer->isAlive()) {
+			float dx = nearPlayer->posX - this->posX;
+			float dz = nearPlayer->posZ - this->posZ;
+			float dy = (nearPlayer->boundingBox.minY + 1.35f) - (this->posY + this->getHeadHeight());
+			float horiz = Mth::sqrt(dx * dx + dz * dz);
+			if (horiz < 0.001f) horiz = 0.001f;
+			float pYaw = (atan2f(dz, dx) * 180.0f / 3.14159265f) - 90.0f;
+			float pPitch = -(atan2f(dy, horiz) * 180.0f / 3.14159265f);
+			float relYaw = Mth::wrapDegrees(pYaw - this->yaw);
+			if (fabsf(relYaw) <= 68.0f) {
+				targetYawOff = Mth::clamp(relYaw + this->ambientYawOffset, -54.0f, 54.0f);
+				targetPitchOff = Mth::clamp(pPitch + this->ambientPitchTarget, -28.0f, 28.0f);
+			}
+		}
+		this->curHeadYawOffset += Mth::clamp((targetYawOff - this->curHeadYawOffset) * 0.22f, -9.0f, 9.0f);
+		this->curHeadPitchOffset += Mth::clamp((targetPitchOff - this->curHeadPitchOffset) * 0.22f, -6.0f, 6.0f);
+		float desiredHeadYaw = Mth::wrapDegrees(this->yaw + this->curHeadYawOffset);
+		float bodyRel = Mth::wrapDegrees(desiredHeadYaw - this->field_124);
+		bodyRel = Mth::clamp(bodyRel, -58.0f, 58.0f);
+		this->headYaw = Mth::wrapDegrees(this->field_124 + bodyRel);
+		if (!this->maybeEntityWhichIsBeingLookedByThisEntity) {
+			this->pitch = Mth::clamp(this->curHeadPitchOffset, -30.0f, 30.0f);
+		}
+	}
+
 	while(this->yaw - this->prevYaw < -180.0) this->prevYaw -= 360.0;
 	while(this->yaw - this->prevYaw >= 180.0) this->prevYaw += 360.0;
 
@@ -523,6 +593,13 @@ void Mob::baseTick() {
 			this->setLastHurtByMob(0);
 		} else {
 			this->field_C60 = v15 - 1;
+		}
+	}
+	if(this->field_C58 > 0) {
+		if(this->lastHurtMobTicks <= 0) {
+			this->setLastHurtMob(0);
+		} else {
+			--this->lastHurtMobTicks;
 		}
 	}
 	if(this->health <= 0) {
@@ -691,6 +768,18 @@ LABEL_7:
 		} else {
 			v18 = Mth::random();
 			this->field_14C = (float)(int32_t)(float)(v18 + v18) * 180.0;
+		}
+	}
+	if(a2 && this->health > 0) {
+		Entity* playerSource = a2;
+		if(a2->getEntityTypeId() == 80 && this->level) {
+			Entity* shooter = this->level->getEntity(((Arrow*)a2)->shooterEID);
+			if(shooter) {
+				playerSource = shooter;
+			}
+		}
+		if(playerSource && playerSource->isPlayer() && playerSource != this) {
+			((Mob*)playerSource)->setLastHurtMob(this);
 		}
 	}
 	if(this->health > 0) {
@@ -1346,8 +1435,12 @@ void Mob::getLastHurtMob() {
 	this->updateMobId(&this->field_C58);
 }
 void Mob::setLastHurtMob(Entity* a2) {
-	if(a2->isMob()) {
+	if(a2 && a2->isMob() && a2 != this) {
 		this->field_C58 = a2->entityId;
+		this->lastHurtMobTicks = 60;
+	} else {
+		this->field_C58 = 0;
+		this->lastHurtMobTicks = 0;
 	}
 }
 Entity* Mob::getTarget() {

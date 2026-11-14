@@ -1,4 +1,5 @@
 #include <rendering/model/CreeperModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
 #include <math/Mth.hpp>
 
 CreeperModel::CreeperModel(float a2)
@@ -51,17 +52,14 @@ void CreeperModel::setupAnim(float a2, float a3, float a4, float a5, float a6, f
 	this->field_19C.xRotAngle = v9;
 	this->field_21C.xRotAngle = v9;
 
-	if (a3 > 0.001f) {
-		float bodySway = Mth::sin(a2 * 0.6662f) * a3 * 0.06f;
-		float stalkLean = a3 * 0.12f;
-		this->field_9C.xRotAngle = stalkLean;
-		this->field_9C.zRotAngle = bodySway;
-		this->field_1C.zRotAngle = -bodySway * 0.5f;
-	} else {
-		this->field_9C.xRotAngle = 0.0f;
-		this->field_9C.zRotAngle = 0.0f;
-		this->field_1C.zRotAngle = 0.0f;
-		// Subtle menacing breath pulse
-		this->field_1C.yRotAngle += Mth::sin(a4 * 0.05f) * 0.03f;
-	}
+	float headScan = animWindowHold(a4, 46.0f, 331U, 88U, true) * 0.18f;
+	float headTilt = animWindowHold(a4, 42.0f, 337U, 82U, true) * 0.14f;
+	float headPitch = animWindowHold(a4, 54.0f, 347U, 72U, true) * 0.11f;
+
+	this->field_1C.yRotAngle += headScan;
+	this->field_1C.xRotAngle += headPitch;
+	this->field_1C.zRotAngle = headTilt;
+	this->field_9C.xRotAngle = 0.0f;
+	this->field_9C.yRotAngle = 0.0f;
+	this->field_9C.zRotAngle = 0.0f;
 }

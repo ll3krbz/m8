@@ -26,6 +26,7 @@
 #include <network/packet/PlayerArmorEquipmentPacket.hpp>
 #include <network/packet/PlayerEquipmentPacket.hpp>
 #include <network/packet/PlayerInputPacket.hpp>
+#include <network/packet/SetEntityDataPacket.hpp>
 #include <network/packet/SetEntityLinkPacket.hpp>
 #include <network/packet/SetHealthPacket.hpp>
 #include <perf/Stopwatch.hpp>
@@ -174,7 +175,7 @@ void LocalPlayer::sendPosition() {
   this->field_DCC = this->headYaw;
   this->field_BD4 = this->pitch;
   this->field_BD8 = this->yaw;
-  if (this->isRiding()) {
+  if (this->isRiding() || (this->level && this->level->isClientMaybe && this->isSneaking())) {
     PlayerInputPacket v17(this->moveForward, this->moveStrafe, this->isJumping,
                           this->isSneaking());
     this->minecraft->rakNetInstance->send(v17);
@@ -270,6 +271,14 @@ void LocalPlayer::tick() {
   bool_t wasSneaking = this->getSharedFlag(1);
   Player::tick();
   bool_t nowSneaking = this->getSharedFlag(1);
+  if (this->level && !this->level->isClientMaybe && this->minecraft &&
+      this->minecraft->isOnline() && this->minecraft->rakNetInstance) {
+    SynchedEntityData *ed = this->getEntityData();
+    if (ed && ed->isDirty) {
+      SetEntityDataPacket dp(this->entityId, 0, ed->packDirty());
+      this->minecraft->rakNetInstance->send(dp);
+    }
+  }
   if (this->level && this->level->isClientMaybe && this->minecraft &&
       this->minecraft->rakNetInstance && !this->isRiding() &&
       nowSneaking != wasSneaking) {

@@ -1,4 +1,5 @@
 #include <entity/ServerPlayer.hpp>
+#include <level/Level.hpp>
 #include <Minecraft.hpp>
 #include <inventory/BaseContainerMenu.hpp>
 #include <network/RakNetInstance.hpp>
@@ -18,6 +19,7 @@
 #include <tile/entity/ChestTileEntity.hpp>
 #include <inventory/ChestMenu.hpp>
 #include <network/packet/ContainerSetContentPacket.hpp>
+#include <network/packet/SetEntityDataPacket.hpp>
 
 ServerPlayer::ServerPlayer(Minecraft* a2, Level* a3)
 	: Player(a3, a2->isCreativeMode()) {
@@ -80,6 +82,11 @@ ServerPlayer::~ServerPlayer() {
 }
 void ServerPlayer::tick() {
 	Player::tick();
+	SynchedEntityData* ed = this->getEntityData();
+	if(ed && ed->isDirty && this->level && !this->level->isClientMaybe && this->minecraft && this->minecraft->rakNetInstance) {
+		SetEntityDataPacket dp(this->entityId, 0, ed->packDirty());
+		this->minecraft->rakNetInstance->send(dp);
+	}
 	if(!this->item.isNull()) {
 		--this->useItemDuration;
 	}

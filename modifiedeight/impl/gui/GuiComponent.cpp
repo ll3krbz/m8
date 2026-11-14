@@ -67,6 +67,10 @@ void GuiComponent::drawString(struct Font* font, const std::string& s, int32_t x
 }
 void GuiComponent::fill(float a2, float a3, float a4, float a5, int32_t color){
 	DisableState state(0xDE1);
+	glEnable(0x0BE2u);
+	glBlendFunc(0x0302u, 0x0303u);
+	glDisable(0x0BC0u);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	Tesselator::instance.begin(GL_TRIANGLES);
 	Tesselator::instance.colorABGR((color&0xff00ff00) | ((color&0xff) << 16) | ((color & 0xff0000) >> 16));
 	Tesselator::instance.vertex(a2, a5, 0);

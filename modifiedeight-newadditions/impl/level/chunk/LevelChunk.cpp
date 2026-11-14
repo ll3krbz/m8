@@ -298,7 +298,8 @@ void LevelChunk::recalcHeightmapOnly() {
 		for(int32_t i = 0; i != 16; ++i) {
 			int32_t v4 = LevelHeight::maxY();
 			do {
-				if(Tile::lightBlock[this->tiles[((v1 << LevelHeight::xShift) | (i << LevelHeight::zShift)) - 1 + v4]]) --v4;
+				if(Tile::lightBlock[this->tiles[((v1 << LevelHeight::xShift) | (i << LevelHeight::zShift)) - 1 + v4]]) break;
+				--v4;
 			} while(v4);
 			int32_t v6 = v1 | (16 * i);
 			if(v2 >= v4) v2 = v4;

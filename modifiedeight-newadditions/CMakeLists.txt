@@ -197,6 +197,23 @@ else()
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build"
     )
 
+    if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/build/assets/images/gui/background")
+        if(EXISTS "${CMAKE_SOURCE_DIR}/platforms/android/app/src/newadditions/assets")
+            add_custom_command(TARGET modifiedeight-newadditions PRE_LINK
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${CMAKE_CURRENT_BINARY_DIR}/build/assets/images/gui/background"
+                    "${CMAKE_SOURCE_DIR}/platforms/android/app/src/newadditions/assets/images/gui/background"
+            )
+        endif()
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+            add_custom_command(TARGET modifiedeight-newadditions PRE_LINK
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${CMAKE_CURRENT_BINARY_DIR}/build/assets/images/gui/background"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/gui/background"
+            )
+        endif()
+    endif()
+
     if(EXISTS "${CMAKE_SOURCE_DIR}/platforms/android/app/src/newadditions/assets")
         add_custom_command(TARGET modifiedeight-newadditions POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory

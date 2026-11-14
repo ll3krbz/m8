@@ -1,4 +1,5 @@
 #include <rendering/model/FishModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
 #include <math/Mth.hpp>
 
 FishModel::FishModel()
@@ -38,7 +39,14 @@ void FishModel::setupAnim(float a2, float a3, float a4, float a5, float a6, floa
 	if (a3 > 0.05f) {
 		f = a3 * 1.5f;
 	}
-	this->tail.yRotAngle = -f * 0.45f * Mth::sin(0.6f * a4);
+	float dartBurst = 1.0f + fabsf(animBurstWave(a4, 38.0f, 701U, 110U, 2.5f)) * 0.65f;
+	float finFlutter = animBurstWave(a4, 34.0f, 709U, 128U, 3.0f) * 0.22f;
+	float bodyYaw = animWindowHold(a4, 44.0f, 719U, 92U, true) * 0.12f;
+	this->tail.yRotAngle = -f * 0.45f * dartBurst * Mth::sin(0.6f * a4);
+	this->body.yRotAngle = bodyYaw - this->tail.yRotAngle * 0.18f;
+	this->body.zRotAngle = animWindowHold(a4, 48.0f, 727U, 80U, true) * 0.08f;
+	this->finRight.zRotAngle = -0.7853982f + finFlutter;
+	this->finLeft.zRotAngle = 0.7853982f - finFlutter;
 }
 
 void FishModel::render(Entity* a2, float a3, float a4, float a5, float a6, float a7, float a8) {

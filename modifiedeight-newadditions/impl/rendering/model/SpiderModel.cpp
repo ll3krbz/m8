@@ -1,4 +1,5 @@
 #include <rendering/model/SpiderModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
 #include <math.h>
 #include <math/Mth.hpp>
 
@@ -18,8 +19,12 @@ void SpiderModel::Eyes::render(Entity* a2, float a3, float a4, float a5, float a
 	glDisable(0x8037u);
 }
 void SpiderModel::Eyes::setupAnim(float a2, float a3, float a4, float a5, float a6, float a7) {
-	this->field_1C.yRotAngle = a5 / (float)(180 / 3.1416);
-	this->field_1C.xRotAngle = a6 / (float)(180 / 3.1416);
+	float headTwitchY = animWindowHold(a4, 36.0f, 351U, 92U, true) * 0.16f + animBurstWave(a4, 52.0f, 353U, 64U, 2.6f) * 0.08f;
+	float headTwitchX = animWindowHold(a4, 42.0f, 359U, 84U, true) * 0.12f;
+	float headTiltZ = animWindowHold(a4, 40.0f, 367U, 80U, true) * 0.14f;
+	this->field_1C.yRotAngle = (a5 / (float)(180 / 3.1416)) + headTwitchY;
+	this->field_1C.xRotAngle = (a6 / (float)(180 / 3.1416)) + headTwitchX;
+	this->field_1C.zRotAngle = headTiltZ;
 }
 
 SpiderModel::SpiderModel() : field_1C(32, 4, 64, 32), field_9C(0, 0, 64, 32), field_11C(0, 12, 64, 32), field_19C(18, 0, 64, 32), field_21C(18, 0, 64, 32), field_29C(18, 0, 64, 32), field_31C(18, 0, 64, 32), field_39C(18, 0, 64, 32), field_41C(18, 0, 64, 32), field_49C(18, 0, 64, 32), field_51C(18, 0, 64, 32){
@@ -149,4 +154,21 @@ void SpiderModel::setupAnim(float a2, float a3, float a4, float a5, float a6, fl
 	this->field_41C.zRotAngle = v18 - v29;
 	this->field_49C.zRotAngle = v30 - (float)(3.1416 * 0.25);
 	this->field_51C.zRotAngle = (float)(3.1416 * 0.25) - v30;
+
+	float headTwitchY = animWindowHold(a4, 36.0f, 351U, 92U, true) * 0.16f + animBurstWave(a4, 52.0f, 353U, 64U, 2.6f) * 0.08f;
+	float headTwitchX = animWindowHold(a4, 42.0f, 359U, 84U, true) * 0.12f;
+	float headTiltZ = animWindowHold(a4, 40.0f, 367U, 80U, true) * 0.14f;
+	this->field_1C.yRotAngle += headTwitchY;
+	this->field_1C.xRotAngle += headTwitchX;
+	this->field_1C.zRotAngle = headTiltZ;
+	this->field_11C.xRotAngle = animWindowHold(a4, 48.0f, 373U, 88U, true) * 0.09f + animBurstWave(a4, 56.0f, 379U, 68U, 2.2f) * 0.06f;
+	this->field_11C.yRotAngle = animWindowHold(a4, 54.0f, 383U, 82U, true) * 0.08f;
+	if (a3 <= 0.01f) {
+		float tapL = fabsf(animBurstWave(a4, 44.0f, 389U, 76U, 2.4f)) * 0.18f;
+		float tapR = fabsf(animBurstWave(a4, 46.0f, 397U, 76U, 2.4f)) * 0.18f;
+		this->field_49C.zRotAngle += tapL;
+		this->field_51C.zRotAngle -= tapR;
+		this->field_49C.yRotAngle += tapL * 0.5f;
+		this->field_51C.yRotAngle -= tapR * 0.5f;
+	}
 }

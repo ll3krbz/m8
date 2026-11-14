@@ -23,6 +23,7 @@
 #include <nbt/ListTag.hpp>
 #include <tile/entity/TileEntity.hpp>
 #include <entity/EntityFactory.hpp>
+#include <vector>
 
 ExternalFileLevelStorage::ExternalFileLevelStorage(const std::string& a2, const std::string& a3)
 	: field_8(a2),
@@ -405,7 +406,65 @@ LevelChunk* ExternalFileLevelStorage::load(Level* a2, int32_t a3, int32_t a4) {
 					v17 = 1;
 				}
 			}
-			v10->recalcHeightmap();
+			if(this->field_28 > 0) {
+				v10->recalcHeightmapOnly();
+				std::vector<int32_t> repairQueue;
+				static const int32_t dx[6] = {-1, 1, 0, 0, 0, 0};
+				static const int32_t dy[6] = {0, 0, -1, 1, 0, 0};
+				static const int32_t dz[6] = {0, 0, 0, 0, -1, 1};
+				for(int32_t lx = 0; lx < 16; ++lx) {
+					for(int32_t lz = 0; lz < 16; ++lz) {
+						int32_t hm = v10->getHeightmap(lx, lz);
+						if(hm > MCPE_HEIGHT) hm = MCPE_HEIGHT;
+						for(int32_t ly = hm - 1; ly >= 0; --ly) {
+							int32_t tid = v10->getTile(lx, ly, lz);
+							int32_t att = Tile::lightBlock[tid];
+							if(att >= 15) continue;
+							if(!att) att = 1;
+							if(v10->skyLight.get(lx, ly, lz) != 0) continue;
+							int32_t best = 0;
+							for(int32_t d = 0; d < 6; ++d) {
+								int32_t nx = lx + dx[d];
+								int32_t ny = ly + dy[d];
+								int32_t nz = lz + dz[d];
+								if(nx < 0 || nx >= 16 || nz < 0 || nz >= 16 || ny < 0 || ny >= MCPE_HEIGHT) continue;
+								int32_t nl = v10->skyLight.get(nx, ny, nz) - att;
+								if(nl > best) best = nl;
+							}
+							if(best >= 2) {
+								v10->skyLight.set(lx, ly, lz, best);
+								repairQueue.push_back((lx << 11) | (lz << 7) | ly);
+							}
+						}
+					}
+				}
+				size_t qHead = 0;
+				while(qHead < repairQueue.size()) {
+					int32_t packed = repairQueue[qHead++];
+					int32_t lx = (packed >> 11) & 15;
+					int32_t lz = (packed >> 7) & 15;
+					int32_t ly = packed & 127;
+					int32_t curLight = v10->skyLight.get(lx, ly, lz);
+					if(curLight <= 1) continue;
+					for(int32_t d = 0; d < 6; ++d) {
+						int32_t nx = lx + dx[d];
+						int32_t ny = ly + dy[d];
+						int32_t nz = lz + dz[d];
+						if(nx < 0 || nx >= 16 || nz < 0 || nz >= 16 || ny < 0 || ny >= MCPE_HEIGHT) continue;
+						int32_t ntid = v10->getTile(nx, ny, nz);
+						int32_t natt = Tile::lightBlock[ntid];
+						if(natt >= 15) continue;
+						if(!natt) natt = 1;
+						int32_t cand = curLight - natt;
+						if(cand > v10->skyLight.get(nx, ny, nz)) {
+							v10->skyLight.set(nx, ny, nz, cand);
+							repairQueue.push_back((nx << 11) | (nz << 7) | ny);
+						}
+					}
+				}
+			} else {
+				v10->recalcHeightmap();
+			}
 			v10->unsaved = v17 | v15;
 			v10->decorated = 1;
 			v10->field_24B = 1;

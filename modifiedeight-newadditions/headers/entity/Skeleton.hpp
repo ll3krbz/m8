@@ -21,5 +21,6 @@ struct Skeleton: Monster
 	virtual std::string getDeathSound();
 	virtual bool_t useNewAi();
 	virtual void checkHurtTarget(Entity*, float);
+	virtual int32_t getUseItemDuration();
 	virtual int32_t getUseDuration();
 };

@@ -15,6 +15,7 @@
 #include <tile/Tile.hpp>
 #include <utils.h>
 #include <rendering/TextureTesselator.hpp>
+#include <rendering/TextureAtlasTextureItem.hpp>
 
 ItemInHandRenderer::ItemInHandRenderer(struct Minecraft* a2)
 	: field_4(0, 1, 0)
@@ -24,16 +25,16 @@ ItemInHandRenderer::ItemInHandRenderer(struct Minecraft* a2)
 	this->field_20 = 0;
 	AppPlatform::_singleton->addListener(this, 1.0);
 }
-int32_t ItemInHandRenderer::_getFrameID(struct Mob* a2, ItemInstance* a3) {
-	int32_t v7;
+uint64_t ItemInHandRenderer::_getFrameID(struct Mob* a2, ItemInstance* a3) {
+	uint64_t v7;
 	if(a3->isStackedByData()) {
-		v7 = (a3->getId() | ((uint16_t)a3->getAuxValue()) << 12);
+		v7 = ((uint64_t)(uint16_t)a3->getId() | ((uint64_t)(uint16_t)a3->getAuxValue() << 16));
 	} else {
-		v7 = a3->getId() | 0;
+		v7 = (uint64_t)(uint16_t)a3->getId();
 	}
 	if(a2) {
-		v7 |= a2->getEntityTypeId() << 16;					 //byte2
-		v7 |= a3->itemClass->getAnimationFrameFor(a2) << 24; //hibyte
+		v7 |= ((uint64_t)(uint8_t)a2->getEntityTypeId()) << 32;
+		v7 |= ((uint64_t)(uint8_t)a3->itemClass->getAnimationFrameFor(a2)) << 40;
 	}
 	return v7;
 }
@@ -45,8 +46,7 @@ void ItemInHandRenderer::itemUsed() {
 }
 
 RenderCall* ItemInHandRenderer::rebuildItem(struct Mob* a2, ItemInstance& a3) {
-	//TODO check
-	int fid = this->_getFrameID(a2, &a3);
+	uint64_t fid = this->_getFrameID(a2, &a3);
 	RenderCall* v7 = new RenderCall();
 	this->field_90[fid].reset(v7);
 
@@ -123,6 +123,24 @@ RenderCall* ItemInHandRenderer::rebuildItem(struct Mob* a2, ItemInstance& a3) {
 		if (v5 == 1) col = 0x619961;
 		else if (v5 == 2) col = 0x80A755;
 		else col = 0x48B518;
+	} else if (id == 383) {
+		int32_t eggIdx = -1;
+		if (aux == 32 || aux == 53) eggIdx = 4;
+		else if (aux == 33) eggIdx = 5;
+		else if (aux == 34) eggIdx = 6;
+		else if (aux == 35) eggIdx = 7;
+		else if (aux == 36) eggIdx = 8;
+		if (eggIdx >= 4) {
+			TextureAtlasTextureItem* texItem = Item::getTextureItem("spawn_egg");
+			TextureUVCoordinateSet* nativeUv = texItem ? texItem->getUV(eggIdx) : 0;
+			if (!nativeUv || nativeUv->width <= 0.0f || (nativeUv->maxX - nativeUv->minX) <= 0.0001f) {
+				if (aux == 32 || aux == 53) col = 0x3B9B7B;
+				else if (aux == 33) col = 0x0DA70B;
+				else if (aux == 34) col = 0xC1C1C1;
+				else if (aux == 35) col = 0x4F3D39;
+				else if (aux == 36) col = 0xEA9393;
+			}
+		}
 	} else if (a3.tileClass) {
 		col = a3.tileClass->getColor(aux);
 	}
@@ -337,7 +355,7 @@ void ItemInHandRenderer::renderItem(struct Mob* a2, ItemInstance* a3) {
 	int graphics;		  // r7
 	Minecraft* minecraft; // r3
 	GLenum v12;			  // r0
-	unsigned int frameId; // r0
+	uint64_t frameId;
 
 	tileClass = a3->tileClass;
 	if(tileClass && tileClass->getRenderShape() == 22) {

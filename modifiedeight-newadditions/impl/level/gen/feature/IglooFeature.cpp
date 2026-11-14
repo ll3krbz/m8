@@ -91,7 +91,6 @@ bool_t IglooFeature::place(Level* level, Random* random, int32_t x, int32_t y, i
 	bool hasBasement = (random->genrand_int32() % 2) == 0;
 	int32_t snow = Tile::snow ? Tile::snow->blockID : 80;
 	int32_t topSnow = Tile::topSnow ? Tile::topSnow->blockID : 0;
-	int32_t carpetBlock = Tile::cloth ? Tile::cloth->blockID : 35;
 
 	auto setR = [&](int32_t lx, int32_t ly, int32_t lz, int32_t id, int32_t meta) {
 		this->placeBlockRotated(level, x, y, z, lx, ly, lz, id, meta, rotation);
@@ -153,10 +152,6 @@ bool_t IglooFeature::place(Level* level, Random* random, int32_t x, int32_t y, i
 	setR(3, 1, 1, 0, 0);
 	setR(3, 2, 1, 0, 0);
 
-	setR(3, 0, 2, carpetBlock, 14);
-	setR(2, 0, 2, carpetBlock, 14);
-	setR(2, 0, 3, carpetBlock, 14);
-
 	if (Tile::workBench) setR(2, 1, 5, Tile::workBench->blockID, 0);
 	if (Tile::furnace) setR(4, 1, 5, Tile::furnace->blockID, 3);
 
@@ -186,17 +181,14 @@ bool_t IglooFeature::place(Level* level, Random* random, int32_t x, int32_t y, i
 			if (ly >= -6) {
 				setR(2, ly, 3, sbId, 0);
 				setR(4, ly, 3, sbId, 0);
-				setR(2, ly, 2, sbId, 0);
-				setR(4, ly, 2, sbId, 0);
-				setR(3, ly, 1, sbId, 0);
+				setR(3, ly, 2, sbId, 0);
 			}
 			setR(3, ly, 4, sbId, 0);
-			setR(3, ly, 2, 0, 0);
 			setR(3, ly, 3, 0, 0);
 		}
 
 		setR(3, 0, 4, snow, 0);
-		setR(3, 0, 2, 0, 0);
+		setR(3, 0, 2, snow, 0);
 		setR(3, 0, 3, 0, 0);
 
 		for (int32_t ly = 0; ly >= -10; --ly) {

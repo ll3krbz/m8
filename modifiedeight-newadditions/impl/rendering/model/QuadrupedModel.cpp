@@ -1,4 +1,5 @@
 #include <rendering/model/QuadrupedModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
 #include <math/Mth.hpp>
 
 QuadrupedModel::QuadrupedModel(int32_t a2, float a3, int32_t a4, int32_t a5)
@@ -79,15 +80,21 @@ void QuadrupedModel::setupAnim(float a2, float a3, float a4, float a5, float a6,
 	this->field_218.xRotAngle = v8;
 	this->field_298.xRotAngle = v8;
 
+	float grazeDip = animWindowHold(a4, 56.0f, 101U, 74U, false) * 0.22f + animBurstWave(a4, 56.0f, 103U, 64U, 2.8f) * 0.045f;
+	float headTilt = animWindowHold(a4, 46.0f, 107U, 82U, true) * 0.16f + animBurstWave(a4, 76.0f, 113U, 42U, 3.2f) * 0.11f;
+	float sideGlance = animWindowHold(a4, 52.0f, 109U, 86U, true) * 0.14f;
+	float weightShift = animWindowHold(a4, 64.0f, 127U, 68U, true) * 0.028f;
 	if (a3 > 0.001f) {
 		float bodySway = Mth::sin(a2 * 0.6662f) * a3 * 0.05f;
 		float headBob = Mth::cos(a2 * 0.6662f * 2.0f) * a3 * 0.08f;
-		this->field_118.zRotAngle = bodySway;
-		this->field_18.xRotAngle += headBob;
-		this->field_18.zRotAngle = -bodySway * 0.5f;
+		this->field_118.zRotAngle = bodySway + weightShift * 0.5f;
+		this->field_18.xRotAngle += headBob + grazeDip * 0.45f;
+		this->field_18.yRotAngle += sideGlance * 0.65f;
+		this->field_18.zRotAngle = -bodySway * 0.5f + headTilt * 0.7f;
 	} else {
-		this->field_118.zRotAngle = 0.0f;
-		this->field_18.zRotAngle = 0.0f;
-		this->field_18.xRotAngle += Mth::sin(a4 * 0.06f) * 0.02f;
+		this->field_118.zRotAngle = weightShift;
+		this->field_18.zRotAngle = headTilt;
+		this->field_18.xRotAngle += grazeDip;
+		this->field_18.yRotAngle += sideGlance;
 	}
 }

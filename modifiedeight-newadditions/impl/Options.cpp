@@ -43,7 +43,7 @@ Options::Option Options::Option::AUTO_JUMP{0, "options.autojump", 37};
 Options::Option Options::Option::FOV{1, "options.fov", 38};
 Options::Option Options::Option::CHAT_COLOR{3, "options.chatcolor", 24};
 Options::Option Options::Option::CHAT_BG_COLOR{3, "options.chatbgcolor", 25};
-Options::Option Options::Option::CLASSIC_BACKGROUND{0, "options.classicbackground", 27};
+Options::Option Options::Option::CLASSIC_BACKGROUND{3, "options.classicbackground", 27};
 Options::Option Options::Option::CLASSIC_GUI{0, "options.classicgui", 28};
 Options::Option Options::Option::NEON_COLOR_THEME{3, "options.neoncolortheme", 29};
 Options::Option Options::Option::HUD_CAMERA_BUTTON{0, "options.hudcamerabutton", 30};
@@ -151,7 +151,7 @@ void Options::update() {
 							this->readBool(v13[i + 1], this->animateFire);
 						} else if(v13[i] == "options.newadditions") {
 							// this->readBool(v13[i + 1], this->newAdditions);
-						} else if(v13[i] == "options.classicbackground") {
+						} else if(v13[i] == "options.menubackground") {
 							this->readBool(v13[i + 1], this->classicBackground);
 						} else if(v13[i] == "options.classicgui") {
 							this->readBool(v13[i + 1], this->classicGUI);
@@ -420,10 +420,13 @@ void Options::set(const Options::Option* a2, int32_t a3) {
 		this->panoramaAngle = a3;
 	} else if(a2 == &Options::Option::SKIN_SOURCE) {
 		this->skinSource = a3 & 1;
+	} else if(a2 == &Options::Option::CLASSIC_BACKGROUND) {
+		this->classicBackground = (a3 & 1) != 0;
 	} else if(a2 == &Options::Option::GUI_SCALE) {
 		this->guiScale = a3 & 3;
 	}
 	this->notifyOptionUpdate(a2, a3);
+	this->save();
 }
 void Options::set(const Options::Option* a2, float a3) {
 	if(a2 == &Options::Option::MUSIC) {
@@ -478,7 +481,7 @@ void Options::save(void) {
 	this->addOptionToSaveOutput(v4, OptionStrings::Graphics_AnimateLava, this->animateLava);
 	this->addOptionToSaveOutput(v4, OptionStrings::Graphics_AnimateFire, this->animateFire);
 	this->addOptionToSaveOutput(v4, "options.newadditions", this->newAdditions);
-	this->addOptionToSaveOutput(v4, "options.classicbackground", this->classicBackground);
+	this->addOptionToSaveOutput(v4, "options.menubackground", this->classicBackground);
 	this->addOptionToSaveOutput(v4, "options.classicgui", this->classicGUI);
 	this->addOptionToSaveOutput(v4, "options.neoncolortheme", this->neonColorTheme);
 	this->addOptionToSaveOutput(v4, "options.sprint", this->sprintEnabled);
@@ -581,7 +584,7 @@ void Options::initDefaultValues(void) {
 	this->fancySkies = 1;
 	this->animateTextures = 1;
 	this->newAdditions = 1;
-	this->classicBackground = 1;
+	this->classicBackground = 0;
 	this->classicGUI = 1;
 	this->neonColorTheme = 0;
 	this->sprintEnabled = 1;
@@ -728,6 +731,9 @@ std::vector<int> Options::getValues(const Options::Option* a2) {
 	if(a2 == &Options::Option::SKIN_SOURCE) {
 		return Options::SKIN_SOURCE_LEVELS;
 	}
+	if(a2 == &Options::Option::CLASSIC_BACKGROUND) {
+		return {0, 1};
+	}
 	if(a2 == &Options::Option::GUI_SCALE) {
 		return {0, 1, 2, 3};
 	}
@@ -836,9 +842,15 @@ int32_t Options::getIntValue(const Options::Option* a2) {
 	if(a2 == &Options::Option::SKIN_SOURCE) {
 		return this->skinSource;
 	}
+	if(a2 == &Options::Option::CLASSIC_BACKGROUND) {
+		return this->classicBackground ? 1 : 0;
+	}
 	return 0;
 }
 std::string Options::getDescription(const Options::Option* a2, std::string a4) {
+	if(a2 == &Options::Option::CLASSIC_BACKGROUND) {
+		return a4 + ": " + (this->classicBackground ? "Dirt" : "Panorama");
+	}
 	if(a2 == &Options::Option::CHAT_COLOR) {
 		std::string colors[] = {"White", "Gray", "Yellow", "Green", "Red", "Blue", "Gold", "Aqua", "Purple"};
 		if(this->chatColor >= 0 && this->chatColor <= 8) return a4 + ": " + colors[this->chatColor];

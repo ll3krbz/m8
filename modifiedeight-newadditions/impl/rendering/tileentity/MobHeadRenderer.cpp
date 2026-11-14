@@ -26,9 +26,89 @@ const char *MobHeadRenderer::getTexturePath(int32_t headType) {
   return _headTextures[headType];
 }
 
+struct ScopedHeadGlState {
+	Textures* texMgr;
+	int32_t prevTex;
+	GLboolean blendWas;
+	GLboolean alphaTestWas;
+	GLboolean depthTestWas;
+	GLboolean rescaleWas;
+	GLboolean cullWas;
+	GLboolean lightingWas;
+	GLboolean textureWas;
+	GLint prevAlphaFunc;
+	GLfloat prevAlphaRef;
+	GLint prevBlendSrc;
+	GLint prevBlendDst;
+	GLint prevShadeModel;
+
+	ScopedHeadGlState(Textures* mgr)
+		: texMgr(mgr)
+		, prevTex(mgr ? mgr->currentTexture : 0)
+		, blendWas(glIsEnabled(GL_BLEND))
+		, alphaTestWas(glIsEnabled(GL_ALPHA_TEST))
+		, depthTestWas(glIsEnabled(GL_DEPTH_TEST))
+		, rescaleWas(glIsEnabled(GL_RESCALE_NORMAL))
+		, cullWas(glIsEnabled(GL_CULL_FACE))
+		, lightingWas(glIsEnabled(GL_LIGHTING))
+		, textureWas(glIsEnabled(GL_TEXTURE_2D))
+		, prevAlphaFunc(GL_GREATER)
+		, prevAlphaRef(0.1f)
+		, prevBlendSrc(GL_SRC_ALPHA)
+		, prevBlendDst(GL_ONE_MINUS_SRC_ALPHA)
+		, prevShadeModel(GL_FLAT) {
+#ifdef GL_ALPHA_TEST_FUNC
+		glGetIntegerv(GL_ALPHA_TEST_FUNC, &prevAlphaFunc);
+#endif
+#ifdef GL_ALPHA_TEST_REF
+		glGetFloatv(GL_ALPHA_TEST_REF, &prevAlphaRef);
+#endif
+#ifdef GL_BLEND_SRC
+		glGetIntegerv(GL_BLEND_SRC, &prevBlendSrc);
+#endif
+#ifdef GL_BLEND_DST
+		glGetIntegerv(GL_BLEND_DST, &prevBlendDst);
+#endif
+		glGetIntegerv(GL_SHADE_MODEL, &prevShadeModel);
+	}
+
+	~ScopedHeadGlState() {
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		glShadeModel(prevShadeModel);
+		glAlphaFunc(prevAlphaFunc, prevAlphaRef);
+		glBlendFunc(prevBlendSrc, prevBlendDst);
+		if (cullWas) glEnable(GL_CULL_FACE);
+		else glDisable(GL_CULL_FACE);
+		if (alphaTestWas) glEnable(GL_ALPHA_TEST);
+		else glDisable(GL_ALPHA_TEST);
+		if (blendWas) glEnable(GL_BLEND);
+		else glDisable(GL_BLEND);
+		if (depthTestWas) glEnable(GL_DEPTH_TEST);
+		else glDisable(GL_DEPTH_TEST);
+		if (rescaleWas) glEnable(GL_RESCALE_NORMAL);
+		else glDisable(GL_RESCALE_NORMAL);
+		if (textureWas) glEnable(GL_TEXTURE_2D);
+		else glDisable(GL_TEXTURE_2D);
+		if (lightingWas) glEnable(GL_LIGHTING);
+		else glDisable(GL_LIGHTING);
+		if (texMgr && prevTex) {
+			texMgr->bind(prevTex);
+		}
+	}
+};
+
+static Textures* resolveHeadTextures(MobHeadRenderer* renderer, Textures* preferred) {
+	if (preferred) return preferred;
+	if (renderer && renderer->dispatcher && renderer->dispatcher->textures) return renderer->dispatcher->textures;
+	if (EntityRenderer::entityRenderDispatcher && EntityRenderer::entityRenderDispatcher->textures) return EntityRenderer::entityRenderDispatcher->textures;
+	if (NinecraftApp::instance && NinecraftApp::instance->texturesPtr) return NinecraftApp::instance->texturesPtr;
+	return nullptr;
+}
+
 void MobHeadRenderer::render2DFace(Textures* textures, int32_t headType, float x, float y, float size, float alpha) {
   if (!textures) return;
   if (headType < 0 || headType >= 18) headType = 0;
+  ScopedHeadGlState glState(textures);
   textures->loadAndBindTexture(getTexturePath(headType));
 
   struct FaceData {
@@ -65,13 +145,10 @@ void MobHeadRenderer::render2DFace(Textures* textures, int32_t headType, float x
   float drawX = x + (size - drawW) * 0.5f;
   float drawY = y + (size - drawH) * 0.5f;
 
-  GLboolean blendWas = glIsEnabled(GL_BLEND);
-  GLboolean alphaTestWas = glIsEnabled(GL_ALPHA_TEST);
-
   glEnable(GL_TEXTURE_2D);
-  if (!blendWas) glEnable(GL_BLEND);
+  glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  if (!alphaTestWas) glEnable(GL_ALPHA_TEST);
+  glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER, 0.1f);
   glColor4f(1.0f, 1.0f, 1.0f, alpha);
 
@@ -111,11 +188,6 @@ void MobHeadRenderer::render2DFace(Textures* textures, int32_t headType, float x
   t.scale4 = previousScale4;
   t.scale5 = previousScale5;
   t.isTilted = previousTilt;
-
-  glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-  if (!alphaTestWas) glDisable(GL_ALPHA_TEST);
-  glAlphaFunc(GL_GREATER, 0.5f);
-  if (!blendWas) glDisable(GL_BLEND);
 }
 
 MobHeadRenderer::MobHeadRenderer() : TileEntityRenderer() {
@@ -230,35 +302,20 @@ void MobHeadRenderer::renderGuiHead(Textures* textures, int32_t headType, float 
     headType = 0;
   if (!instance)
     return;
-  if (textures) {
-    textures->loadAndBindTexture(getTexturePath(headType));
+  Textures* activeTextures = resolveHeadTextures(instance, textures);
+  ScopedHeadGlState glState(activeTextures);
+  if (activeTextures) {
+    activeTextures->loadAndBindTexture(getTexturePath(headType));
   }
   glPushMatrix();
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_RESCALE_NORMAL);
-  glDisable(GL_BLEND);
-  glDisable(GL_ALPHA_TEST);
-  GLint shadeModel = GL_FLAT;
-  GLint oldMinFilter = GL_NEAREST;
-  GLint oldMagFilter = GL_NEAREST;
-  glGetIntegerv(GL_SHADE_MODEL, &shadeModel);
-  glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &oldMinFilter);
-  glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &oldMagFilter);
   glShadeModel(GL_FLAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTranslatef(x + 8.0f, y + 8.0f, -12.0f);
   glScalef(24.0f * scale, 24.0f * scale, 24.0f * scale);
   glScalef(1.0f, -1.0f, 1.0f);
   glColor4f(1.0f, 1.0f, 1.0f, alpha);
   instance->renderHead(headType, 0.0f, 0.0f, 0.0f, 0.0f, 0.0625f);
-  glEnable(GL_BLEND);
-  glEnable(GL_ALPHA_TEST);
-  glShadeModel(shadeModel);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, oldMinFilter);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, oldMagFilter);
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_RESCALE_NORMAL);
   glPopMatrix();
 }
 
@@ -266,45 +323,23 @@ void MobHeadRenderer::renderHead(int32_t headType, float x, float y, float z,
                                  float rotAngle, float scale) {
   if (headType < 0 || headType >= 18)
     headType = 0;
+  Textures* activeTextures = resolveHeadTextures(this, nullptr);
+  ScopedHeadGlState glState(activeTextures);
   glPushMatrix();
   glTranslatef(x, y, z);
   glRotatef(180.0f - rotAngle, 0.0f, 1.0f, 0.0f);
   glScalef(-1.0f, -1.0f, 1.0f);
-  const char *tex = getTexturePath(headType);
-  if (this->dispatcher && this->dispatcher->textures) {
-    this->dispatcher->textures->loadAndBindTexture(tex);
-  } else if (EntityRenderer::entityRenderDispatcher &&
-             EntityRenderer::entityRenderDispatcher->textures) {
-    EntityRenderer::entityRenderDispatcher->textures->loadAndBindTexture(tex);
-  } else if (NinecraftApp::instance && NinecraftApp::instance->texturesPtr) {
-    NinecraftApp::instance->texturesPtr->loadAndBindTexture(tex);
+  if (activeTextures) {
+    activeTextures->loadAndBindTexture(getTexturePath(headType));
   }
-  GLboolean lightingWas = glIsEnabled(GL_LIGHTING);
-  GLboolean cullWas = glIsEnabled(GL_CULL_FACE);
-  GLboolean blendWas = glIsEnabled(GL_BLEND);
-  GLboolean alphaTestWas = glIsEnabled(GL_ALPHA_TEST);
-  GLboolean depthTestWas = glIsEnabled(GL_DEPTH_TEST);
-  GLboolean textureWas = glIsEnabled(GL_TEXTURE_2D);
-
-  if (!textureWas) glEnable(GL_TEXTURE_2D);
-  if (!blendWas) glEnable(GL_BLEND);
+  glEnable(GL_TEXTURE_2D);
+  glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  if (!alphaTestWas) glEnable(GL_ALPHA_TEST);
+  glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER, 0.1f);
-  if (cullWas) glDisable(GL_CULL_FACE);
+  glDisable(GL_CULL_FACE);
 
   headParts[headType].render(scale);
-
-  glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-  if (cullWas) glEnable(GL_CULL_FACE);
-  else glDisable(GL_CULL_FACE);
-  if (!alphaTestWas) glDisable(GL_ALPHA_TEST);
-  glAlphaFunc(GL_GREATER, 0.5f);
-  if (!blendWas) glDisable(GL_BLEND);
-  if (!depthTestWas) glDisable(GL_DEPTH_TEST);
-  if (!textureWas) glDisable(GL_TEXTURE_2D);
-  if (lightingWas) glEnable(GL_LIGHTING);
-  else glDisable(GL_LIGHTING);
 
   glPopMatrix();
 }

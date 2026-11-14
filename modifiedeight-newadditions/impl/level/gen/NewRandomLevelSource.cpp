@@ -1438,7 +1438,7 @@ void NewRandomLevelSource::postProcess(struct ChunkSource* a2, int32_t chunkX, i
 
 	LevelChunk* chunk = this->level->getChunk(chunkX, chunkZ);
 	if (chunk) {
-		chunk->recalcHeightmap();
+		chunk->recalcHeightmapOnly();
 	}
 	while (this->level->updateLights()) {
 	}

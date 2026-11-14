@@ -19,6 +19,7 @@ Skeleton::Skeleton(Level* a2)
 	this->entityRenderId = SKELETON;
 	this->field_C9C = 0;
 	this->skin = "mob/skeleton.png";
+	this->synchedEntityData.define<int8_t>(16, 0);
 	this->goalSelector.addGoal(1, new FloatGoal(this), 1);
 	this->goalSelector.addGoal(2, new RestrictSunGoal(this), 1);
 	this->goalSelector.addGoal(3, new FleeSunGoal(this, 1.0), 1);
@@ -76,6 +77,16 @@ void Skeleton::aiStep() {
 			this->setOnFire(8);
 		}
 	}
+	if(this->level && !this->level->isClientMaybe) {
+		int8_t useDur = 0;
+		if(this->attackTarget != 0 && this->attackTime > 0 && this->attackTime <= 32) {
+			Entity* tgt = this->level->getEntity(this->attackTarget);
+			if(tgt && tgt->isAlive() && tgt->distanceToSqr(this) <= 110.0f && this->canSee(tgt)) {
+				useDur = (int8_t)(33 - this->attackTime);
+			}
+		}
+		this->synchedEntityData.set<int8_t>(16, useDur);
+	}
 	Monster::aiStep();
 }
 ItemInstance* Skeleton::getCarriedItem() {
@@ -128,7 +139,9 @@ void Skeleton::checkHurtTarget(Entity* a2, float a3) {
 	if(a3 < 10.0) {
 		v5 = a2->posX - this->posX;
 		v6 = a2->posZ - this->posZ;
-		if(!this->attackTime) {
+		if(this->attackTime <= 0) {
+			this->attackTime = 32;
+		} else if(this->attackTime == 1) {
 			v7 = new Arrow(this->level, (Mob*)this, 1.0);
 			v9 = (float)((float)(a2->posY + a2->getHeadHeight()) - 0.7) - v7->posY;
 			v10 = sqrt((float)((float)(v6 * v6) + (float)(v5 * v5)));
@@ -143,6 +156,9 @@ void Skeleton::checkHurtTarget(Entity* a2, float a3) {
 		this->yaw = (float)(atan2f(v6, v5) * 57.296) - 90.0;
 	}
 }
+int32_t Skeleton::getUseItemDuration() {
+	return (int32_t)(uint8_t)this->synchedEntityData.getByte(16);
+}
 int32_t Skeleton::getUseDuration() {
-	return this->attackTime;
+	return this->getUseItemDuration();
 }

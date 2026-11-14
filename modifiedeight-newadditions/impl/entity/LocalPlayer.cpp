@@ -29,6 +29,7 @@
 #include <network/packet/PlayerArmorEquipmentPacket.hpp>
 #include <network/packet/PlayerEquipmentPacket.hpp>
 #include <network/packet/PlayerInputPacket.hpp>
+#include <network/packet/SetEntityDataPacket.hpp>
 #include <network/packet/SetEntityLinkPacket.hpp>
 #include <network/packet/SetHealthPacket.hpp>
 #include <perf/Stopwatch.hpp>
@@ -178,7 +179,7 @@ void LocalPlayer::sendPosition() {
   this->field_DCC = this->headYaw;
   this->field_BD4 = this->pitch;
   this->field_BD8 = this->yaw;
-  if (this->isRiding()) {
+  if (this->isRiding() || (this->level && this->level->isClientMaybe && !JavaBridge::isActive() && this->isSneaking())) {
     PlayerInputPacket v17(this->moveForward, this->moveStrafe, this->isJumping,
                           this->isSneaking());
     this->minecraft->rakNetInstance->send(v17);
@@ -290,6 +291,14 @@ void LocalPlayer::tick() {
   bool_t wasSneaking = this->getSharedFlag(1);
   Player::tick();
   bool_t nowSneaking = this->getSharedFlag(1);
+  if (this->level && !this->level->isClientMaybe && this->minecraft &&
+      this->minecraft->isOnline() && this->minecraft->rakNetInstance) {
+    SynchedEntityData *ed = this->getEntityData();
+    if (ed && ed->isDirty) {
+      SetEntityDataPacket dp(this->entityId, 0, ed->packDirty());
+      this->minecraft->rakNetInstance->send(dp);
+    }
+  }
   if (this->level && this->level->isClientMaybe && this->minecraft &&
       this->minecraft->rakNetInstance && !JavaBridge::isActive() &&
       !this->isRiding() && nowSneaking != wasSneaking) {
@@ -715,30 +724,38 @@ void LocalPlayer::travel(float a2, float a3) {
     }
   }
   if (inWater) {
-    this->onGround = false;
+    this->fallDistance = 0.0f;
+    bool headInWater = this->isUnderLiquid(Material::water);
     float pitchRad = this->pitch * 0.0174532925f;
     float lookY = -sinf(pitchRad);
     float horizCos = cosf(pitchRad);
     if (horizCos < 0.0f) horizCos = -horizCos;
-    float baseSpeed = this->isSprinting ? 0.068f : 0.042f;
+    float baseSpeed = this->isSprinting ? 0.064f : 0.042f;
     float horizSpeed = baseSpeed * (0.45f + 0.55f * horizCos);
     bool hasForward = (a3 > 0.05f || a3 < -0.05f);
     bool hasInput = hasForward || (a2 > 0.05f || a2 < -0.05f);
     if (hasForward) {
-      float swimPower = this->isSprinting ? 0.054f : 0.036f;
+      float swimPower = this->isSprinting ? 0.052f : 0.034f;
       this->motionY += a3 * lookY * swimPower;
     }
+    if (this->isJumping) {
+      this->motionY += headInWater ? 0.032f : 0.024f;
+    }
     if (this->isSneaking()) {
-      this->motionY -= 0.03f;
+      this->motionY -= 0.032f;
+    }
+    if (!headInWater && !this->isJumping && !this->isCollidedHorizontally &&
+        this->motionY > 0.0f && (!hasForward || lookY < 0.45f)) {
+      this->motionY *= 0.45f;
     }
     this->moveRelative(a2, a3, horizSpeed);
     this->move(this->motionX, this->motionY, this->motionZ);
-    this->motionX *= 0.88f;
-    this->motionZ *= 0.88f;
-    if (hasInput || this->isSneaking()) {
+    this->motionX *= 0.89f;
+    this->motionZ *= 0.89f;
+    if (hasInput || this->isSneaking() || this->isJumping) {
       this->motionY *= 0.88f;
     } else {
-      this->motionY = (this->motionY * 0.86f) - 0.005f;
+      this->motionY = (this->motionY * 0.86f) - (headInWater ? 0.004f : 0.002f);
     }
     if (this->isCollidedHorizontally && !this->isSneaking() && a3 > 0.05f && this->level) {
       int px = (int)floorf(this->posX);

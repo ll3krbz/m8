@@ -1,4 +1,5 @@
 #include <rendering/model/SquidModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
 #include <cmath>
 
 #ifndef M_PI
@@ -31,8 +32,12 @@ SquidModel::~SquidModel() {
 }
 
 void SquidModel::setupAnim(float a2, float a3, float a4, float a5, float a6, float a7) {
+	float t = a2 + a4 * 12.0f;
+	this->body.zRotAngle = animWindowHold(t, 36.0f, 601U, 96U, true) * 0.10f;
+	this->body.xRotAngle = animWindowHold(t, 42.0f, 607U, 96U, true) * 0.08f;
 	for (int32_t i = 0; i < 8; ++i) {
-		this->tentacles[i]->xRotAngle = a4;
+		float wave = animBurstWave(t, 32.0f, 613U + (uint32_t)i * 17U, 120U, 1.8f) * 0.14f;
+		this->tentacles[i]->xRotAngle = a4 + wave;
 	}
 }
 

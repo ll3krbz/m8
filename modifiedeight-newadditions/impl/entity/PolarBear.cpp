@@ -2,6 +2,7 @@
 #include <entity/Arrow.hpp>
 #include <entity/Player.hpp>
 #include <entity/player/Abilities.hpp>
+#include <entity/path/Path.hpp>
 #include <inventory/Inventory.hpp>
 #include <item/Item.hpp>
 #include <item/ItemInstance.hpp>
@@ -19,6 +20,44 @@ PolarBear::PolarBear(Level* level)
 	this->stareTicks = 0;
 	this->friendlyTicks = 0;
 	this->trustedPlayerId = 0;
+	this->repathTicks = 0;
+	this->isInterested = 0;
+	this->ownerName = "";
+	this->synchedEntityData.define<int8_t>(16, 0);
+}
+
+void PolarBear::updateSynchedFlags() {
+	int8_t flags = 0;
+	if (this->isInterested) flags |= 1;
+	this->synchedEntityData.set<int8_t>(16, flags);
+}
+
+Player* PolarBear::resolveTrustedPlayer() {
+	if (!this->level || this->friendlyTicks <= 0) return 0;
+	if (this->trustedPlayerId != 0) {
+		Entity* e = this->level->getEntity(this->trustedPlayerId);
+		if (e && e->isPlayer()) {
+			return (Player*)e;
+		}
+		this->trustedPlayerId = 0;
+	}
+	if (!this->ownerName.empty()) {
+		for (size_t i = 0; i < this->level->playersMaybe.size(); ++i) {
+			Player* p = this->level->playersMaybe[i];
+			if (p && p->username == this->ownerName) {
+				this->trustedPlayerId = p->entityId;
+				return p;
+			}
+		}
+	} else if (this->level->playersMaybe.size() == 1) {
+		Player* p = this->level->playersMaybe[0];
+		if (p) {
+			this->ownerName = p->username;
+			this->trustedPlayerId = p->entityId;
+			return p;
+		}
+	}
+	return 0;
 }
 
 bool_t PolarBear::isFishItem(const ItemInstance* inst) const {
@@ -96,6 +135,7 @@ bool_t PolarBear::interactWithPlayer(Player* player) {
 		this->inPanicTicksMaybe = 0;
 		this->setLastHurtByMob(0);
 		this->trustedPlayerId = player->entityId;
+		this->ownerName = player->username;
 		this->friendlyTicks = 2400;
 		if (this->health > 0 && this->health < this->getMaxHealth()) {
 			int32_t nextHp = this->health + 4;
@@ -107,8 +147,10 @@ bool_t PolarBear::interactWithPlayer(Player* player) {
 			if (curAge < 0) {
 				this->setAge(curAge - curAge / 10);
 			}
-		} else if (this->getAge() == 0 && this->inLove <= 0) {
+		} else if (!this->isBaby() && this->inLove <= 0) {
+			this->setAge(0);
 			this->inLove = 600;
+			this->setPath(0);
 		}
 		this->level->playSound(this, "random.eat", 0.8f, (this->random.nextFloat() - this->random.nextFloat()) * 0.2f + 1.0f);
 	}
@@ -256,17 +298,70 @@ bool_t PolarBear::doHurtTarget(Entity* target) {
 
 void PolarBear::aiStep() {
 	Animal::aiStep();
-	if (!this->level || this->level->isClientMaybe) {
+	if (!this->level) {
+		return;
+	}
+	if (this->level->isClientMaybe) {
+		uint8_t flags = (uint8_t)this->synchedEntityData.getByte(16);
+		this->isInterested = (flags & 1) != 0;
 		return;
 	}
 	if (this->friendlyTicks > 0) {
+		this->resolveTrustedPlayer();
 		--this->friendlyTicks;
 		if (this->friendlyTicks == 0) {
 			this->trustedPlayerId = 0;
+			this->ownerName = "";
 		}
 	}
 	if (this->angerTicks > 0) {
 		--this->angerTicks;
+	}
+	Player* temptPlayer = 0;
+	if (this->attackTarget == 0 && this->angerTicks <= 0) {
+		float bestDistSq = 144.0f;
+		for (size_t i = 0; i < this->level->playersMaybe.size(); ++i) {
+			Player* p = this->level->playersMaybe[i];
+			if (!p || !p->isAlive() || !p->inventory) continue;
+			if (this->isFishItem(p->inventory->getSelected())) {
+				float dSq = p->distanceToSqr(this);
+				if (dSq < bestDistSq && this->canSee(p)) {
+					bestDistSq = dSq;
+					temptPlayer = p;
+				}
+			}
+		}
+	}
+	bool_t wantInterested = (temptPlayer != 0) ? 1 : 0;
+	if (wantInterested != this->isInterested) {
+		this->isInterested = wantInterested;
+		this->updateSynchedFlags();
+	}
+	if (temptPlayer && !this->isInLove()) {
+		this->stareTicks = 0;
+		this->lookAt(temptPlayer, 25.0f, 25.0f);
+		this->headYaw = this->yaw;
+		float dSq = temptPlayer->distanceToSqr(this);
+		if (dSq > 7.5f) {
+			if (this->repathTicks > 0) {
+				--this->repathTicks;
+			}
+			if (!this->path || this->path->isDone() || this->repathTicks <= 0) {
+				this->setPath(this->level->findPath(this, temptPlayer, 16.0f, 1, 0, 0, 1));
+				this->repathTicks = 10;
+			}
+			if (!this->path) {
+				float dx = temptPlayer->posX - this->posX;
+				float dz = temptPlayer->posZ - this->posZ;
+				float targetYaw = (atan2f(dz, dx) * 180.0f / 3.14159265f) - 90.0f;
+				float diff = Mth::wrapDegrees(targetYaw - this->yaw);
+				this->yaw = Mth::wrapDegrees(this->yaw + Mth::clamp(diff, -20.0f, 20.0f));
+				this->moveForward = this->getSpeed();
+			}
+		} else if (this->path) {
+			this->setPath(0);
+		}
+		return;
 	}
 	if (this->isBaby()) {
 		this->stareTicks = 0;
@@ -331,12 +426,18 @@ void PolarBear::readAdditionalSaveData(CompoundTag* tag) {
 	Animal::readAdditionalSaveData(tag);
 	this->angerTicks = tag->getInt("Anger");
 	this->friendlyTicks = tag->getInt("FriendlyTicks");
+	this->ownerName = tag->getString("TrustedOwner");
 }
 
 void PolarBear::addAdditonalSaveData(CompoundTag* tag) {
 	Animal::addAdditonalSaveData(tag);
 	tag->putInt("Anger", this->angerTicks);
 	tag->putInt("FriendlyTicks", this->friendlyTicks);
+	tag->putString("TrustedOwner", this->ownerName);
+}
+
+bool_t PolarBear::removeWhenFarAway() {
+	return this->friendlyTicks <= 0;
 }
 
 bool_t PolarBear::canSpawn() {

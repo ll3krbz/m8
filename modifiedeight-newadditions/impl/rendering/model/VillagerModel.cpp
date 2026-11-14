@@ -1,4 +1,5 @@
 #include <rendering/model/VillagerModel.hpp>
+#include <rendering/model/MobAnimUtils.hpp>
 #include <math/Mth.hpp>
 #include <cmath>
 
@@ -42,13 +43,26 @@ VillagerModel::~VillagerModel() {
 }
 
 void VillagerModel::setupAnim(float time, float r, float bob, float yRot, float xRot, float scale) {
-	this->head.yRotAngle = yRot * (3.14159265f / 180.0f);
-	this->head.xRotAngle = xRot * (3.14159265f / 180.0f);
-	this->nose.yRotAngle = this->head.yRotAngle;
-	this->nose.xRotAngle = this->head.xRotAngle;
+	float headTilt = animWindowHold(bob, 44.0f, 151U, 92U, true) * 0.20f;
+	float headNod = animWindowHold(bob, 50.0f, 157U, 84U, false) * 0.14f + animBurstWave(bob, 52.0f, 163U, 72U, 2.2f) * 0.08f;
+	float sideGlance = animWindowHold(bob, 48.0f, 167U, 86U, true) * 0.15f;
+	float noseTwitch = animBurstWave(bob, 42.0f, 173U, 78U, 3.0f) * 0.08f;
+	float armShrug = animWindowHold(bob, 54.0f, 179U, 80U, false) * 0.12f + animBurstWave(bob, 60.0f, 181U, 64U, 2.0f) * 0.06f;
+	float bodySway = (r > 0.001f) ? (Mth::sin(time * 0.6662f) * r * 0.045f) : (animWindowHold(bob, 64.0f, 191U, 68U, true) * 0.03f);
 
-	this->arms.setPos(0.0f, 3.0f, -1.0f);
-	this->arms.xRotAngle = -0.75f;
+	this->head.yRotAngle = yRot * (3.14159265f / 180.0f) + sideGlance;
+	this->head.xRotAngle = xRot * (3.14159265f / 180.0f) + headNod;
+	this->head.zRotAngle = headTilt;
+	this->nose.yRotAngle = this->head.yRotAngle;
+	this->nose.xRotAngle = this->head.xRotAngle + noseTwitch * 0.5f;
+	this->nose.zRotAngle = headTilt + noseTwitch;
+
+	this->body.zRotAngle = bodySway;
+	this->jacket.zRotAngle = bodySway;
+
+	this->arms.setPos(0.0f, 3.0f - armShrug * 2.5f, -1.0f);
+	this->arms.xRotAngle = -0.75f - armShrug;
+	this->arms.zRotAngle = bodySway * 0.8f;
 
 	this->leg0.xRotAngle = Mth::cos(time * 0.6662f) * 1.4f * r * 0.5f;
 	this->leg1.xRotAngle = Mth::cos(time * 0.6662f + 3.14159265f) * 1.4f * r * 0.5f;

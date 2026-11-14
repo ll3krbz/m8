@@ -13,6 +13,7 @@
 #include <entity/ItemEntity.hpp>
 #include <rendering/EntityRenderDispatcher.hpp>
 #include <rendering/ItemInHandRenderer.hpp>
+#include <rendering/TextureAtlasTextureItem.hpp>
 
 TileRenderer* ItemRenderer::tileRenderer = new TileRenderer(0);
 bool_t ItemRenderer::inited = 0;
@@ -37,6 +38,25 @@ static int32_t getFoliageColor(Tile* tileClass, int32_t aux, int32_t id) {
 		if (v5 == 1) return 0x619961;
 		if (v5 == 2) return 0x80A755;
 		return 0x48B518;
+	}
+	if (id == 383) {
+		int32_t eggIdx = -1;
+		if (aux == 32 || aux == 53) eggIdx = 4;
+		else if (aux == 33) eggIdx = 5;
+		else if (aux == 34) eggIdx = 6;
+		else if (aux == 35) eggIdx = 7;
+		else if (aux == 36) eggIdx = 8;
+		if (eggIdx >= 4) {
+			TextureAtlasTextureItem* texItem = Item::getTextureItem("spawn_egg");
+			TextureUVCoordinateSet* nativeUv = texItem ? texItem->getUV(eggIdx) : 0;
+			if (!nativeUv || nativeUv->width <= 0.0f || (nativeUv->maxX - nativeUv->minX) <= 0.0001f) {
+				if (aux == 32 || aux == 53) return 0x3B9B7B;
+				if (aux == 33) return 0x0DA70B;
+				if (aux == 34) return 0xC1C1C1;
+				if (aux == 35) return 0x4F3D39;
+				if (aux == 36) return 0xEA9393;
+			}
+		}
 	}
 	if (tileClass) {
 		int32_t col = tileClass->getColor(aux);
@@ -109,7 +129,10 @@ int32_t ItemRenderer::getAtlasPos(const ItemInstance* a1) {
 					case 351:
 						return _word_D67239E4[(a1->getAuxValue() & 0xF) + 567];
 					case 383:
-						return _word_D67239E4[(a1->getAuxValue() & 0xF) + 583];
+						if(a1->getAuxValue() >= 10 && a1->getAuxValue() <= 13) {
+							return _word_D67239E4[(a1->getAuxValue() & 0xF) + 583];
+						}
+						return -1;
 					case 325:
 						return _word_D67239E4[(a1->getAuxValue() & 0xF) + 551];
 				}

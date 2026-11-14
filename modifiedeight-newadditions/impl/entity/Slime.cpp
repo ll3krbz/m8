@@ -125,8 +125,10 @@ void Slime::aiStep() {
 			this->motionX = 0.0f;
 			this->motionZ = 0.0f;
 		}
+	} else if (!this->isInWater() && this->motionY > 0.0f) {
+		this->targetSquish = 0.5f;
 	} else {
-		this->targetSquish = 1.0f;
+		this->targetSquish = 0.0f;
 	}
 }
 

@@ -60,6 +60,8 @@ bool_t MeshBuffer::_load(const MeshBuffer::VertexFormat* a2, void* a3, int32_t a
 		this->arrayElementsBuffer = 0;
 	}
 
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	return glGetError() == 0;
 }
 
@@ -96,17 +98,30 @@ MeshBuffer& MeshBuffer::operator=(MeshBuffer&& a2){
 
 void MeshBuffer::render(){
 	if(this->arrayBuffer && this->arraysCount > 3 && this->drawMode && this->vertexFormat){
+		GLboolean vertexWas = glIsEnabled(GL_VERTEX_ARRAY);
+		GLboolean texCoordWas = glIsEnabled(GL_TEXTURE_COORD_ARRAY);
+		GLboolean colorWas = glIsEnabled(GL_COLOR_ARRAY);
+		GLboolean normalWas = glIsEnabled(GL_NORMAL_ARRAY);
+
 		glBindBuffer(GL_ARRAY_BUFFER, this->arrayBuffer);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->arrayElementsBuffer);
-		glEnableClientState(GL_VERTEX_ARRAY);
+		if(!vertexWas) {
+			glEnableClientState(GL_VERTEX_ARRAY);
+		}
 		if(this->vertexFormat->offsets[1] != 255) {
-			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			if(!texCoordWas) glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		} else if(texCoordWas) {
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		}
 		if(this->vertexFormat->offsets[2] != 255) {
-			glEnableClientState(GL_COLOR_ARRAY);
+			if(!colorWas) glEnableClientState(GL_COLOR_ARRAY);
+		} else if(colorWas) {
+			glDisableClientState(GL_COLOR_ARRAY);
 		}
 		if(this->vertexFormat->offsets[3] != 255) {
-			glEnableClientState(GL_NORMAL_ARRAY);
+			if(!normalWas) glEnableClientState(GL_NORMAL_ARRAY);
+		} else if(normalWas) {
+			glDisableClientState(GL_NORMAL_ARRAY);
 		}
 		this->vertexFormat->bindArrays();
 		if(this->elementsCount){
@@ -114,11 +129,27 @@ void MeshBuffer::render(){
 		}else{
 			glDrawArrays(this->drawMode, 0, this->arraysCount);
 		}
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		if(this->vertexFormat->offsets[2] != 255) {
-			glDisableClientState(GL_COLOR_ARRAY);
 			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		}
-		if(this->vertexFormat->offsets[3] != 255) {
+		if(!vertexWas) {
+			glDisableClientState(GL_VERTEX_ARRAY);
+		}
+		if(texCoordWas) {
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		} else {
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		}
+		if(colorWas) {
+			glEnableClientState(GL_COLOR_ARRAY);
+		} else {
+			glDisableClientState(GL_COLOR_ARRAY);
+		}
+		if(normalWas) {
+			glEnableClientState(GL_NORMAL_ARRAY);
+		} else {
 			glDisableClientState(GL_NORMAL_ARRAY);
 		}
 	}

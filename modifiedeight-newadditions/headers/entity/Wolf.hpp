@@ -6,12 +6,24 @@ struct Wolf: Animal {
 	bool_t isAngry;
 	bool_t isTame;
 	bool_t isSitting;
+	bool_t isInterested;
 	int32_t angerTicks;
 	int32_t pacifiedTicks;
+	std::string ownerName;
+	int32_t ownerEntityId;
+	int32_t repathTicks;
+	int32_t sitLookMode;
+	int32_t sitLookTicks;
+	float sitYawOffset;
+	float sitPitchTarget;
 
 	Wolf(Level*);
 	void setAngry(bool_t);
 	void updateSynchedFlags();
+	bool_t isMeatItem(const ItemInstance*) const;
+	bool_t isTemptFood(const ItemInstance*) const;
+	bool_t isOwnerPlayer(const Player*) const;
+	Player* resolveOwner();
 	virtual ~Wolf();
 	virtual int32_t getEntityTypeId() const;
 	virtual std::string* getTexture();
@@ -22,8 +34,11 @@ struct Wolf: Animal {
 	virtual const char_t* getAmbientSound();
 	virtual std::string getHurtSound();
 	virtual std::string getDeathSound();
+	virtual void updateAi();
 	virtual void aiStep();
+	virtual void travel(float, float);
 	virtual bool_t canSpawn();
+	virtual bool_t isFood(const ItemInstance*);
 	virtual bool_t interactWithPlayer(Player*);
 	virtual bool_t hurt(Entity*, int32_t);
 	virtual Entity* findAttackTarget();

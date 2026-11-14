@@ -117,6 +117,14 @@ void Font::drawSlow(const char_t* s, int32_t len, float x, float y, int32_t colo
 
 	if(!s || len <= 0) return;
 
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(0x0BC0u);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
 	if(shadow) col = (color & 0xff000000) + ((color & 0xfcfcfc) >> 2);
 	ss = (const uint8_t*) s;
 	v12 = 0;
